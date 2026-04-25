@@ -3,12 +3,13 @@ import { redirect } from "next/navigation";
 
 import { ChatLayout } from "@/components/chat/chat-layout";
 import { createClient } from "@/lib/supabase/server";
-import { getRoomsForCurrentUser } from "@/server/actions/rooms";
 import { syncProfileForUser } from "@/server/actions/auth";
+import { getMessagesForRoom } from "@/server/actions/messages";
+import { getRoomsForCurrentUser } from "@/server/actions/rooms";
 
 export const metadata: Metadata = {
   title: "Chat | Pulse Chat",
-  description: "Manage your Pulse Chat rooms.",
+  description: "Manage your Pulse Chat rooms and messages.",
 };
 
 type ChatPageProps = {
@@ -46,6 +47,13 @@ export default async function ChatPage({ searchParams }: ChatPageProps) {
     rooms[0] ??
     null;
 
+  const messagesResult =
+    activeRoom && activeRoom.isMember
+      ? await getMessagesForRoom(activeRoom.id)
+      : null;
+
+  const messages = messagesResult?.ok ? messagesResult.data.messages : [];
+
   const username =
     typeof user.user_metadata?.username === "string" &&
     user.user_metadata.username.trim().length > 0
@@ -56,6 +64,7 @@ export default async function ChatPage({ searchParams }: ChatPageProps) {
     <ChatLayout
       rooms={rooms}
       activeRoomId={activeRoom?.id ?? null}
+      messages={messages}
       currentUser={{
         id: user.id,
         email: user.email ?? "",

@@ -30,3 +30,29 @@ export type ChatRoom = {
   currentUserRole: ChatRoomMemberRole | null;
   latestMessagePreview: ChatLatestMessagePreview | null;
 };
+
+export type ChatMessageAuthor = {
+  id: string;
+  username: string;
+  avatarUrl: string | null;
+};
+
+export type ChatMessageReplyPreview = {
+  id: string;
+  content: string;
+  authorUsername: string;
+  createdAt: string;
+};
+
+export type ChatMessage = {
+  id: string;
+  roomId: string;
+  userId: string;
+  replyToMessageId: string | null;
+  content: string;
+  isEdited: boolean;
+  createdAt: string;
+  updatedAt: string;
+  author: ChatMessageAuthor;
+  replyToMessage: ChatMessageReplyPreview | null;
+};

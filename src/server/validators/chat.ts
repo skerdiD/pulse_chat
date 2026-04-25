@@ -49,7 +49,7 @@ export const sendMessageSchema = z.object({
     .string()
     .trim()
     .min(1, "Message cannot be empty.")
-    .max(4000, "Message must be 4000 characters or less."),
+    .max(2000, "Message must be 2000 characters or less."),
   replyToMessageId: z
     .string()
     .uuid("Invalid reply message id.")
@@ -63,7 +63,7 @@ export const updateMessageSchema = z.object({
     .string()
     .trim()
     .min(1, "Message cannot be empty.")
-    .max(4000, "Message must be 4000 characters or less."),
+    .max(2000, "Message must be 2000 characters or less."),
 });
 
 export const messageIdSchema = z.object({

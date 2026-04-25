@@ -21,3 +21,12 @@ export const createRoomAj = aj.withRule(
     characteristics: ["userId"],
   }),
 );
+
+export const sendMessageAj = aj.withRule(
+  fixedWindow({
+    mode: "LIVE",
+    window: "1m",
+    max: 30,
+    characteristics: ["userId"],
+  }),
+);
