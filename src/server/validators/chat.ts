@@ -41,6 +41,8 @@ export const roomIdSchema = z.object({
   roomId: z.string().uuid("Invalid room id."),
 });
 
+export const joinRoomSchema = roomIdSchema;
+
 export const sendMessageSchema = z.object({
   roomId: z.string().uuid("Invalid room id."),
   content: z
@@ -91,6 +93,7 @@ export const removeRoomMemberSchema = z.object({
 export type CreateRoomInput = z.infer<typeof createRoomSchema>;
 export type UpdateRoomInput = z.infer<typeof updateRoomSchema>;
 export type RoomIdInput = z.infer<typeof roomIdSchema>;
+export type JoinRoomInput = z.infer<typeof joinRoomSchema>;
 export type SendMessageInput = z.infer<typeof sendMessageSchema>;
 export type UpdateMessageInput = z.infer<typeof updateMessageSchema>;
 export type MessageIdInput = z.infer<typeof messageIdSchema>;
