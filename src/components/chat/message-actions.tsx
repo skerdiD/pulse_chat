@@ -1,7 +1,7 @@
 "use client";
 
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
 import {
   Check,
   Copy,
@@ -30,10 +30,35 @@ export function MessageActions({
   variant = "desktop",
 }: MessageActionsProps) {
   const router = useRouter();
+  const actionsRef = useRef<HTMLDivElement | null>(null);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    function handlePointerDown(event: PointerEvent) {
+      if (!actionsRef.current?.contains(event.target as Node)) {
+        setIsPickerOpen(false);
+        setIsMoreOpen(false);
+      }
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsPickerOpen(false);
+        setIsMoreOpen(false);
+      }
+    }
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
 
   function copyMessage() {
     startTransition(async () => {
@@ -80,9 +105,10 @@ export function MessageActions({
 
   return (
     <div
+      ref={actionsRef}
       className={
         variant === "desktop"
-          ? "absolute right-3 top-2 hidden items-center gap-1 rounded-2xl border border-slate-800 bg-slate-950/95 p-1 opacity-0 shadow-2xl shadow-black/30 backdrop-blur-xl transition group-hover:opacity-100 sm:flex"
+          ? "absolute right-3 top-2 hidden items-center gap-1 rounded-2xl border border-slate-800 bg-slate-950/95 p-1 opacity-0 shadow-2xl shadow-black/30 backdrop-blur-xl transition group-hover:opacity-100 group-focus-within:opacity-100 sm:flex"
           : "relative mt-3 flex flex-wrap gap-2 pl-[52px] sm:hidden"
       }
     >
@@ -106,6 +132,7 @@ export function MessageActions({
           disabled={isPending}
           className={buttonClass}
           aria-label="React to message"
+          aria-expanded={isPickerOpen}
         >
           <SmilePlus className="size-4" />
           {variant === "mobile" ? <span>React</span> : null}
@@ -128,7 +155,9 @@ export function MessageActions({
         aria-label="Copy message"
       >
         {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
-        {variant === "mobile" ? <span>{copied ? "Copied" : "Copy"}</span> : null}
+        {variant === "mobile" ? (
+          <span>{copied ? "Copied" : "Copy"}</span>
+        ) : null}
       </button>
 
       <div className="relative">
@@ -140,6 +169,7 @@ export function MessageActions({
           }}
           className={buttonClass}
           aria-label="More message actions"
+          aria-expanded={isMoreOpen}
         >
           <MoreHorizontal className="size-4" />
           {variant === "mobile" ? <span>More</span> : null}
@@ -147,6 +177,7 @@ export function MessageActions({
 
         {isMoreOpen ? (
           <div
+            role="menu"
             className={
               variant === "desktop"
                 ? "absolute right-0 top-10 z-30 w-44 overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 p-1 shadow-2xl shadow-black/40"
@@ -155,6 +186,7 @@ export function MessageActions({
           >
             <button
               type="button"
+              role="menuitem"
               onClick={() => showComingSoon("Edit message")}
               className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-bold text-slate-300 transition hover:bg-slate-900 hover:text-white"
             >
@@ -164,6 +196,7 @@ export function MessageActions({
 
             <button
               type="button"
+              role="menuitem"
               onClick={() => showComingSoon("Delete message")}
               className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-bold text-red-300 transition hover:bg-red-500/10 hover:text-red-200"
             >

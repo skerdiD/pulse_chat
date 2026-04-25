@@ -1,9 +1,11 @@
 "use client";
 
+import { useMemo } from "react";
 import { Loader2, MessageSquareText } from "lucide-react";
 
 import { MessageItem } from "@/components/chat/message-item";
 import { useScrollAnchor } from "@/hooks/use-scroll-anchor";
+import { formatMessageDateLabel } from "@/lib/format";
 import type { ChatMessage, TypingUser } from "@/types/chat";
 
 type MessageListProps = {
@@ -34,7 +36,7 @@ function TypingIndicator({ users }: { users: TypingUser[] }) {
 
   return (
     <div className="px-3 py-2">
-      <div className="inline-flex items-center gap-2 rounded-full border border-slate-800 bg-slate-950/80 px-3 py-2 text-xs font-bold text-slate-400 shadow-xl shadow-black/20">
+      <div className="inline-flex items-center gap-2 rounded-full border border-slate-800 bg-slate-950/85 px-3 py-2 text-xs font-bold text-slate-400 shadow-xl shadow-black/20">
         <span>{getTypingText(users)}</span>
         <span className="flex items-center gap-1">
           <span className="size-1.5 animate-bounce rounded-full bg-purple-300 [animation-delay:-0.2s]" />
@@ -55,6 +57,29 @@ export function MessageList({
   onReply,
 }: MessageListProps) {
   const latestMessage = messages.at(-1) ?? null;
+
+  const groupedMessages = useMemo(() => {
+    const groups: Array<{
+      label: string;
+      messages: ChatMessage[];
+    }> = [];
+
+    for (const message of messages) {
+      const label = formatMessageDateLabel(message.createdAt);
+      const lastGroup = groups.at(-1);
+
+      if (lastGroup?.label === label) {
+        lastGroup.messages.push(message);
+      } else {
+        groups.push({
+          label,
+          messages: [message],
+        });
+      }
+    }
+
+    return groups;
+  }, [messages]);
 
   const {
     containerRef,
@@ -123,14 +148,26 @@ export function MessageList({
         className="pulse-scrollbar h-full overflow-y-auto px-3 py-5 sm:px-5 lg:px-6"
       >
         <div className="mx-auto flex w-full max-w-5xl flex-col gap-1">
-          {messages.map((message) => (
-            <MessageItem
-              key={message.id}
-              message={message}
-              currentUserId={currentUserId}
-              isOwnMessage={message.userId === currentUserId}
-              onReply={() => onReply(message)}
-            />
+          {groupedMessages.map((group) => (
+            <section key={group.label} aria-label={group.label}>
+              <div className="sticky top-2 z-10 my-4 flex justify-center">
+                <span className="rounded-full border border-slate-800 bg-slate-950/85 px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-slate-500 shadow-xl shadow-black/20 backdrop-blur-xl">
+                  {group.label}
+                </span>
+              </div>
+
+              <div className="space-y-1">
+                {group.messages.map((message) => (
+                  <MessageItem
+                    key={message.id}
+                    message={message}
+                    currentUserId={currentUserId}
+                    isOwnMessage={message.userId === currentUserId}
+                    onReply={() => onReply(message)}
+                  />
+                ))}
+              </div>
+            </section>
           ))}
 
           <TypingIndicator users={typingUsers} />

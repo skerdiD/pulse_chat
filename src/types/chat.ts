@@ -2,6 +2,7 @@ export type CurrentChatUser = {
   id: string;
   email: string;
   username: string;
+  avatarUrl: string | null;
 };
 
 export type ChatRoomVisibility = "public" | "private";
@@ -29,6 +30,15 @@ export type ChatRoom = {
   isMember: boolean;
   currentUserRole: ChatRoomMemberRole | null;
   latestMessagePreview: ChatLatestMessagePreview | null;
+};
+
+export type ChatRoomMember = {
+  id: string;
+  userId: string;
+  username: string;
+  avatarUrl: string | null;
+  role: ChatRoomMemberRole;
+  joinedAt: string;
 };
 
 export type ChatMessageAuthor = {

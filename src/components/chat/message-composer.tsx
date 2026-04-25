@@ -67,6 +67,17 @@ export function MessageComposer({
     }
   }, [form, replyToMessage]);
 
+  useEffect(() => {
+    const textarea = textareaRef.current;
+
+    if (!textarea) {
+      return;
+    }
+
+    textarea.style.height = "auto";
+    textarea.style.height = `${Math.min(textarea.scrollHeight, 160)}px`;
+  }, [content]);
+
   function emitTyping(value: string) {
     if (!value.trim()) {
       return;
@@ -109,6 +120,10 @@ export function MessageComposer({
         replyToMessageId: undefined,
       });
 
+      if (textareaRef.current) {
+        textareaRef.current.style.height = "auto";
+      }
+
       onMessageSent();
       router.refresh();
     });
@@ -119,13 +134,17 @@ export function MessageComposer({
       event.preventDefault();
       form.handleSubmit(onSubmit)();
     }
+
+    if (event.key === "Escape" && replyToMessage) {
+      onCancelReply();
+    }
   }
 
   return (
-    <div className="shrink-0 border-t border-slate-800/90 bg-slate-950/70 p-3 backdrop-blur-xl sm:p-4">
+    <div className="shrink-0 border-t border-slate-800/90 bg-slate-950/72 p-3 shadow-2xl shadow-black/20 backdrop-blur-xl sm:p-4">
       <div className="mx-auto w-full max-w-5xl">
         {replyToMessage ? (
-          <div className="mb-3 rounded-2xl border border-purple-400/20 bg-purple-500/10 p-3">
+          <div className="mb-3 rounded-2xl border border-purple-400/20 bg-purple-500/10 p-3 shadow-lg shadow-purple-500/5">
             <div className="mb-2 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-purple-200">
                 <CornerUpLeft className="size-3.5" />
@@ -152,10 +171,10 @@ export function MessageComposer({
 
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <div className="rounded-[1.5rem] border border-slate-800 bg-slate-950 shadow-2xl shadow-black/20 transition focus-within:border-purple-400/40 focus-within:ring-4 focus-within:ring-purple-500/10">
-            <div className="flex items-end gap-2 p-2">
+            <div className="flex items-end gap-1.5 p-2 sm:gap-2">
               <button
                 type="button"
-                onClick={() => toast.info("Emoji picker is coming next.")}
+                onClick={() => toast.info("Emoji picker is available on messages.")}
                 className="mb-1 flex size-10 shrink-0 items-center justify-center rounded-2xl text-slate-400 transition hover:bg-slate-900 hover:text-white"
                 aria-label="Open emoji picker"
               >
@@ -217,7 +236,8 @@ export function MessageComposer({
           </div>
 
           <p className="mt-2 px-2 text-xs font-medium text-slate-600">
-            Press Enter to send, Shift + Enter for a new line.
+            Press Enter to send, Shift + Enter for a new line. Press Escape to
+            cancel a reply.
           </p>
         </form>
       </div>

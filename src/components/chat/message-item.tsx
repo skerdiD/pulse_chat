@@ -1,8 +1,11 @@
 "use client";
 
+import { memo } from "react";
+
 import { MessageActions } from "@/components/chat/message-actions";
 import { ReactionBadge } from "@/components/chat/reaction-badge";
 import { ReplyPreview } from "@/components/chat/reply-preview";
+import { formatMessageTime, getInitials } from "@/lib/format";
 import type { ChatMessage } from "@/types/chat";
 
 type MessageItemProps = {
@@ -12,23 +15,7 @@ type MessageItemProps = {
   onReply: () => void;
 };
 
-function formatMessageTime(value: string) {
-  return new Intl.DateTimeFormat("en", {
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(value));
-}
-
-function getInitials(username: string) {
-  return username
-    .split(" ")
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-}
-
-export function MessageItem({
+export const MessageItem = memo(function MessageItem({
   message,
   currentUserId,
   isOwnMessage,
@@ -43,7 +30,7 @@ export function MessageItem({
   });
 
   return (
-    <article className="group relative rounded-3xl px-2 py-3 transition hover:bg-slate-900/45 sm:px-3">
+    <article className="group relative rounded-3xl px-2 py-3 transition duration-150 hover:bg-slate-900/45 sm:px-3">
       <div className="flex gap-3">
         <div className="relative mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-purple-400 via-purple-500 to-fuchsia-600 text-xs font-black text-white shadow-lg shadow-purple-500/20 sm:size-11">
           {message.author.avatarUrl ? (
@@ -66,9 +53,12 @@ export function MessageItem({
               {message.author.username}
             </h3>
 
-            <span className="text-xs font-semibold text-slate-500">
+            <time
+              dateTime={message.createdAt}
+              className="text-xs font-semibold text-slate-500"
+            >
               {formatMessageTime(message.createdAt)}
-            </span>
+            </time>
 
             {message.isEdited ? (
               <span className="text-xs font-semibold text-slate-600">
@@ -104,7 +94,6 @@ export function MessageItem({
                   key={reaction.emoji}
                   messageId={message.id}
                   reaction={reaction}
-                  currentUserId={currentUserId}
                 />
               ))}
             </div>
@@ -126,5 +115,16 @@ export function MessageItem({
         variant="mobile"
       />
     </article>
+  );
+}, areMessageItemPropsEqual);
+
+function areMessageItemPropsEqual(
+  previous: MessageItemProps,
+  next: MessageItemProps,
+) {
+  return (
+    previous.message === next.message &&
+    previous.currentUserId === next.currentUserId &&
+    previous.isOwnMessage === next.isOwnMessage
   );
 }

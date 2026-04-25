@@ -1,10 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Menu, Search, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { LockKeyhole, Search, X } from "lucide-react";
 
-import { LogoutButton } from "@/components/auth/LogoutButton";
 import { CreateRoomDialog } from "@/components/chat/create-room-dialog";
+import { ProfileMenu } from "@/components/chat/profile-menu";
 import { RoomItem } from "@/components/chat/room-item";
 import { AppLogo } from "@/components/shared/AppLogo";
 import type { ChatRoom, CurrentChatUser } from "@/types/chat";
@@ -13,15 +13,33 @@ type RoomSidebarProps = {
   rooms: ChatRoom[];
   activeRoomId: string | null;
   currentUser: CurrentChatUser;
+  isMobileOpen: boolean;
+  onMobileOpen: () => void;
+  onMobileClose: () => void;
 };
 
 export function RoomSidebar({
   rooms,
   activeRoomId,
   currentUser,
+  isMobileOpen,
+  onMobileClose,
 }: RoomSidebarProps) {
   const [query, setQuery] = useState("");
-  const [isMobileOpen, setIsMobileOpen] = useState(false);
+
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape" && isMobileOpen) {
+        onMobileClose();
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isMobileOpen, onMobileClose]);
 
   const filteredRooms = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -35,6 +53,7 @@ export function RoomSidebar({
         room.name,
         room.description ?? "",
         room.latestMessagePreview?.content ?? "",
+        room.visibility,
       ]
         .join(" ")
         .toLowerCase()
@@ -42,17 +61,23 @@ export function RoomSidebar({
     });
   }, [query, rooms]);
 
+  const privateRoomCount = rooms.filter(
+    (room) => room.visibility === "private",
+  ).length;
+
+  const joinedRoomCount = rooms.filter((room) => room.isMember).length;
+
   const sidebarContent = (
     <>
       <div className="mb-6 flex items-center justify-between gap-3">
         <AppLogo />
-
         <CreateRoomDialog variant="compact" />
       </div>
 
       <div className="mb-5">
-        <label className="flex h-11 items-center gap-2 rounded-xl border border-slate-800 bg-slate-950 px-3 text-sm text-slate-500">
+        <label className="flex h-11 items-center gap-2 rounded-xl border border-slate-800 bg-slate-950 px-3 text-sm text-slate-500 transition focus-within:border-purple-400/40 focus-within:ring-4 focus-within:ring-purple-500/10">
           <Search className="size-4 shrink-0" />
+          <span className="sr-only">Search rooms</span>
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
@@ -62,6 +87,34 @@ export function RoomSidebar({
         </label>
       </div>
 
+      <div className="mb-4 grid grid-cols-3 gap-2">
+        <div className="rounded-2xl border border-slate-800 bg-slate-950/80 p-3">
+          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">
+            Rooms
+          </p>
+          <p className="mt-1 text-lg font-black text-white">{rooms.length}</p>
+        </div>
+
+        <div className="rounded-2xl border border-slate-800 bg-slate-950/80 p-3">
+          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">
+            Joined
+          </p>
+          <p className="mt-1 text-lg font-black text-white">
+            {joinedRoomCount}
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-slate-800 bg-slate-950/80 p-3">
+          <p className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">
+            <LockKeyhole className="size-3" />
+            Private
+          </p>
+          <p className="mt-1 text-lg font-black text-white">
+            {privateRoomCount}
+          </p>
+        </div>
+      </div>
+
       <div className="pulse-scrollbar min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
         {filteredRooms.length > 0 ? (
           filteredRooms.map((room) => (
@@ -69,48 +122,39 @@ export function RoomSidebar({
               key={room.id}
               room={room}
               isActive={room.id === activeRoomId}
-              onNavigate={() => setIsMobileOpen(false)}
+              onNavigate={onMobileClose}
             />
           ))
-        ) : (
+        ) : rooms.length > 0 ? (
           <div className="rounded-2xl border border-slate-800 bg-slate-950/80 p-5 text-center">
             <p className="text-sm font-black text-white">No rooms found</p>
             <p className="mt-2 text-xs leading-5 text-slate-500">
               Try a different search or create a new room.
             </p>
           </div>
+        ) : (
+          <div className="rounded-2xl border border-slate-800 bg-slate-950/80 p-5 text-center">
+            <p className="text-sm font-black text-white">No rooms yet</p>
+            <p className="mt-2 text-xs leading-5 text-slate-500">
+              Create your first public or private room to start organizing chat.
+            </p>
+
+            <div className="mt-4 flex justify-center">
+              <CreateRoomDialog />
+            </div>
+          </div>
         )}
       </div>
 
-      <div className="mt-4 rounded-2xl border border-slate-800 bg-slate-950/80 p-4">
-        <p className="truncate text-sm font-black text-white">
-          {currentUser.username}
-        </p>
-        <p className="mt-1 truncate text-xs font-semibold text-slate-500">
-          {currentUser.email}
-        </p>
-
-        <div className="mt-4">
-          <LogoutButton />
-        </div>
+      <div className="mt-4">
+        <ProfileMenu currentUser={currentUser} />
       </div>
     </>
   );
 
   return (
     <>
-      <div className="fixed left-4 top-4 z-40 lg:hidden">
-        <button
-          type="button"
-          onClick={() => setIsMobileOpen(true)}
-          className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-slate-800 bg-slate-950/90 px-4 text-sm font-black text-white shadow-2xl shadow-black/40 backdrop-blur-xl"
-        >
-          <Menu className="size-4" />
-          Rooms
-        </button>
-      </div>
-
-      <aside className="hidden w-[340px] shrink-0 flex-col border-r border-slate-800/90 bg-slate-950/80 p-4 lg:flex">
+      <aside className="hidden w-[340px] shrink-0 flex-col border-r border-slate-800/90 bg-slate-950/82 p-4 shadow-2xl shadow-black/20 backdrop-blur-xl lg:flex">
         {sidebarContent}
       </aside>
 
@@ -120,15 +164,25 @@ export function RoomSidebar({
             type="button"
             aria-label="Close rooms sidebar"
             className="absolute inset-0 bg-black/70 backdrop-blur-sm"
-            onClick={() => setIsMobileOpen(false)}
+            onClick={onMobileClose}
           />
 
-          <aside className="relative flex h-full w-[88vw] max-w-sm flex-col border-r border-slate-800 bg-slate-950 p-4 shadow-2xl shadow-black/50">
-            <div className="mb-4 flex justify-end">
+          <aside
+            role="dialog"
+            aria-modal="true"
+            aria-label="Room list"
+            className="relative flex h-full w-[90vw] max-w-sm flex-col border-r border-slate-800 bg-slate-950 p-4 shadow-2xl shadow-black/50"
+          >
+            <div className="mb-4 flex items-center justify-between">
+              <p className="text-sm font-black uppercase tracking-[0.16em] text-slate-500">
+                Rooms
+              </p>
+
               <button
                 type="button"
-                onClick={() => setIsMobileOpen(false)}
-                className="flex size-10 items-center justify-center rounded-xl border border-slate-800 bg-slate-950 text-slate-400 transition hover:text-white"
+                onClick={onMobileClose}
+                className="flex size-10 items-center justify-center rounded-xl border border-slate-800 bg-slate-950 text-slate-400 transition hover:bg-slate-900 hover:text-white"
+                aria-label="Close rooms"
               >
                 <X className="size-4" />
               </button>

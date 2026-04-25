@@ -1,36 +1,56 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Pulse Chat
 
-## Getting Started
+Pulse Chat is a premium real-time room-based chat web app for teams, creators, and small communities.
 
-First, run the development server:
+It is built as a polished portfolio-level SaaS product with authentication, profiles, rooms, messages, replies, emoji reactions, typing indicators, and Supabase Realtime.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Features
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- Email/password authentication with Supabase Auth
+- Protected chat workspace
+- User profile sync
+- Profile settings with username and optional avatar URL
+- Public and private rooms
+- Room creation and joining
+- Room sidebar with search and active states
+- Member list and room settings
+- Messages with author, avatar, timestamp, and reply preview
+- Message composer with reply state
+- Message hover actions
+- Copy message
+- Emoji reactions
+- Live message updates with Supabase Realtime
+- Live reaction updates with Supabase Realtime
+- Typing indicators
+- Realtime connection status
+- Responsive desktop, tablet, and mobile layout
+- Premium dark SaaS UI
+- Arcjet protection for important actions
+- Zod validation for server actions and forms
+- Drizzle ORM for typed database access
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Tech Stack
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Next.js 16 App Router
+- TypeScript
+- Tailwind CSS
+- shadcn/ui
+- Supabase Auth
+- Supabase Postgres
+- Supabase Realtime
+- Drizzle ORM
+- Arcjet
+- Zod
+- React Hook Form
+- Lucide React
+- Sonner
 
-## Learn More
+## Environment Variables
 
-To learn more about Next.js, take a look at the following resources:
+Create `.env.local` and add the following variable names:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```env
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
+DATABASE_URL=
+ARCJET_KEY=

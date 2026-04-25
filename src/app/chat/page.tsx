@@ -5,7 +5,11 @@ import { ChatLayout } from "@/components/chat/chat-layout";
 import { createClient } from "@/lib/supabase/server";
 import { syncProfileForUser } from "@/server/actions/auth";
 import { getMessagesForRoom } from "@/server/actions/messages";
-import { getRoomsForCurrentUser } from "@/server/actions/rooms";
+import { getCurrentUserProfile } from "@/server/actions/profile";
+import {
+  getRoomMembersForCurrentUserRoom,
+  getRoomsForCurrentUser,
+} from "@/server/actions/rooms";
 
 export const metadata: Metadata = {
   title: "Chat | Pulse Chat",
@@ -32,7 +36,10 @@ export default async function ChatPage({ searchParams }: ChatPageProps) {
 
   await syncProfileForUser(user);
 
-  const roomsResult = await getRoomsForCurrentUser();
+  const [roomsResult, profileResult] = await Promise.all([
+    getRoomsForCurrentUser(),
+    getCurrentUserProfile(),
+  ]);
 
   if (!roomsResult.ok) {
     redirect("/login");
@@ -47,28 +54,36 @@ export default async function ChatPage({ searchParams }: ChatPageProps) {
     rooms[0] ??
     null;
 
-  const messagesResult =
+  const [messagesResult, membersResult] =
     activeRoom && activeRoom.isMember
-      ? await getMessagesForRoom(activeRoom.id)
-      : null;
+      ? await Promise.all([
+          getMessagesForRoom(activeRoom.id),
+          getRoomMembersForCurrentUserRoom(activeRoom.id),
+        ])
+      : [null, null];
 
   const messages = messagesResult?.ok ? messagesResult.data.messages : [];
+  const members = membersResult?.ok ? membersResult.data.members : [];
 
-  const username =
+  const fallbackUsername =
     typeof user.user_metadata?.username === "string" &&
     user.user_metadata.username.trim().length > 0
       ? user.user_metadata.username
       : user.email?.split("@")[0] ?? "Pulse User";
+
+  const profile = profileResult.ok ? profileResult.data.profile : null;
 
   return (
     <ChatLayout
       rooms={rooms}
       activeRoomId={activeRoom?.id ?? null}
       messages={messages}
+      members={members}
       currentUser={{
         id: user.id,
         email: user.email ?? "",
-        username,
+        username: profile?.username ?? fallbackUsername,
+        avatarUrl: profile?.avatarUrl ?? null,
       }}
     />
   );

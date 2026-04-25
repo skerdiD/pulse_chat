@@ -1,35 +1,70 @@
 import {
   Hash,
   LockKeyhole,
+  Menu,
   MoreHorizontal,
   Radio,
-  Settings,
   UsersRound,
 } from "lucide-react";
 
+import { ProfileMenu } from "@/components/chat/profile-menu";
 import { RealtimeStatus } from "@/components/chat/realtime-status";
-import type { ChatRoom, RealtimeConnectionStatus } from "@/types/chat";
+import { RoomSettingsDialog } from "@/components/chat/room-settings-dialog";
+import type {
+  ChatRoom,
+  ChatRoomMember,
+  CurrentChatUser,
+  RealtimeConnectionStatus,
+} from "@/types/chat";
 
 type ChatHeaderProps = {
   room: ChatRoom;
+  members: ChatRoomMember[];
+  currentUser: CurrentChatUser;
   realtimeStatus: RealtimeConnectionStatus;
+  onOpenRooms: () => void;
 };
 
-export function ChatHeader({ room, realtimeStatus }: ChatHeaderProps) {
+export function ChatHeader({
+  room,
+  members,
+  currentUser,
+  realtimeStatus,
+  onOpenRooms,
+}: ChatHeaderProps) {
+  const roleLabel =
+    room.currentUserRole === "owner"
+      ? "Owner"
+      : room.currentUserRole === "admin"
+        ? "Admin"
+        : room.isMember
+          ? "Member"
+          : "Viewer";
+
   return (
-    <header className="flex h-20 shrink-0 items-center justify-between border-b border-slate-800/90 bg-slate-950/60 px-4 backdrop-blur-xl sm:px-6 lg:h-[76px]">
-      <div className="flex min-w-0 items-center gap-3">
-        <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-purple-500 text-white shadow-lg shadow-purple-500/20">
+    <header className="relative z-20 flex h-20 shrink-0 items-center justify-between border-b border-slate-800/90 bg-slate-950/72 px-3 shadow-xl shadow-black/10 backdrop-blur-xl sm:px-6 lg:h-[76px]">
+      <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+        <button
+          type="button"
+          onClick={onOpenRooms}
+          className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-slate-800 bg-slate-950/80 text-slate-300 transition hover:border-purple-400/30 hover:bg-slate-900 hover:text-white lg:hidden"
+          aria-label="Open rooms"
+        >
+          <Menu className="size-4" />
+        </button>
+
+        <div className="relative flex size-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-500 to-fuchsia-600 text-white shadow-lg shadow-purple-500/20 sm:size-12">
           {room.visibility === "private" ? (
             <LockKeyhole className="size-5" />
           ) : (
             <Hash className="size-5" />
           )}
+          <span className="absolute -bottom-0.5 -right-0.5 size-3 rounded-full border-2 border-slate-950 bg-emerald-400" />
         </div>
 
         <div className="min-w-0">
           <div className="flex min-w-0 items-center gap-2">
-            <h1 className="truncate text-lg font-black tracking-[-0.03em] text-white sm:text-xl">
+            <h1 className="truncate text-base font-black tracking-[-0.03em] text-white sm:text-xl">
               {room.name}
             </h1>
 
@@ -40,6 +75,10 @@ export function ChatHeader({ room, realtimeStatus }: ChatHeaderProps) {
                 <Radio className="size-3 text-emerald-300" />
               )}
               {room.visibility}
+            </span>
+
+            <span className="hidden rounded-full border border-purple-400/20 bg-purple-500/10 px-2.5 py-1 text-xs font-black text-purple-200 md:inline-flex">
+              {roleLabel}
             </span>
           </div>
 
@@ -65,19 +104,19 @@ export function ChatHeader({ room, realtimeStatus }: ChatHeaderProps) {
 
         <button
           type="button"
-          className="hidden size-10 items-center justify-center rounded-xl border border-slate-800 bg-slate-950/70 text-slate-400 transition hover:border-purple-400/30 hover:text-white sm:flex"
+          className="hidden size-10 items-center justify-center rounded-xl border border-slate-800 bg-slate-950/70 text-slate-400 transition hover:border-purple-400/30 hover:bg-slate-900 hover:text-white md:flex"
           aria-label="More room actions"
         >
           <MoreHorizontal className="size-4" />
         </button>
 
-        <button
-          type="button"
-          className="flex size-10 items-center justify-center rounded-xl border border-slate-800 bg-slate-950/70 text-slate-400 transition hover:border-purple-400/30 hover:text-white"
-          aria-label="Room settings"
-        >
-          <Settings className="size-4" />
-        </button>
+        <RoomSettingsDialog
+          room={room}
+          members={members}
+          currentUserId={currentUser.id}
+        />
+
+        <ProfileMenu currentUser={currentUser} compact />
       </div>
     </header>
   );

@@ -10,6 +10,7 @@ const statusConfig: Record<
   RealtimeConnectionStatus,
   {
     label: string;
+    shortLabel: string;
     className: string;
     dotClassName: string;
     icon: "wifi" | "loader" | "off";
@@ -17,6 +18,7 @@ const statusConfig: Record<
 > = {
   connected: {
     label: "Live",
+    shortLabel: "Live",
     className:
       "border-emerald-400/20 bg-emerald-400/10 text-emerald-200 shadow-emerald-500/5",
     dotClassName: "bg-emerald-400 shadow-[0_0_14px_rgba(52,211,153,0.9)]",
@@ -24,6 +26,7 @@ const statusConfig: Record<
   },
   loading: {
     label: "Connecting",
+    shortLabel: "Sync",
     className:
       "border-amber-400/20 bg-amber-400/10 text-amber-200 shadow-amber-500/5",
     dotClassName: "bg-amber-300 shadow-[0_0_14px_rgba(252,211,77,0.9)]",
@@ -31,6 +34,7 @@ const statusConfig: Record<
   },
   reconnecting: {
     label: "Reconnecting",
+    shortLabel: "Sync",
     className:
       "border-amber-400/20 bg-amber-400/10 text-amber-200 shadow-amber-500/5",
     dotClassName: "bg-amber-300 shadow-[0_0_14px_rgba(252,211,77,0.9)]",
@@ -38,13 +42,14 @@ const statusConfig: Record<
   },
   disconnected: {
     label: "Offline",
-    className:
-      "border-slate-700 bg-slate-900 text-slate-400 shadow-black/10",
+    shortLabel: "Off",
+    className: "border-slate-700 bg-slate-900 text-slate-400 shadow-black/10",
     dotClassName: "bg-slate-500",
     icon: "off",
   },
   error: {
-    label: "Error",
+    label: "Realtime error",
+    shortLabel: "Err",
     className:
       "border-red-400/20 bg-red-500/10 text-red-200 shadow-red-500/5",
     dotClassName: "bg-red-400 shadow-[0_0_14px_rgba(248,113,113,0.9)]",
@@ -57,8 +62,9 @@ export function RealtimeStatus({ status }: RealtimeStatusProps) {
 
   return (
     <div
-      className={`hidden h-10 items-center gap-2 rounded-xl border px-3 text-xs font-black shadow-lg sm:inline-flex ${config.className}`}
+      className={`inline-flex h-10 items-center gap-2 rounded-xl border px-3 text-xs font-black shadow-lg transition ${config.className}`}
       title={`Realtime status: ${config.label}`}
+      aria-label={`Realtime status: ${config.label}`}
     >
       <span className={`size-1.5 rounded-full ${config.dotClassName}`} />
 
@@ -68,7 +74,8 @@ export function RealtimeStatus({ status }: RealtimeStatusProps) {
       ) : null}
       {config.icon === "off" ? <WifiOff className="size-3.5" /> : null}
 
-      <span>{config.label}</span>
+      <span className="hidden sm:inline">{config.label}</span>
+      <span className="sm:hidden">{config.shortLabel}</span>
     </div>
   );
 }

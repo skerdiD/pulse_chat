@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+import { formatRoomPreviewTime } from "@/lib/format";
 import { joinRoomAction } from "@/server/actions/rooms";
 import type { ChatRoom } from "@/types/chat";
 
@@ -45,11 +46,13 @@ export function RoomItem({ room, isActive, onNavigate }: RoomItemProps) {
     });
   }
 
+  const latestTime = formatRoomPreviewTime(room.latestMessagePreview?.createdAt);
+
   const content = (
     <div
       className={
         isActive
-          ? "w-full rounded-2xl border border-purple-400/40 bg-purple-500/20 p-3 text-left shadow-lg shadow-purple-500/10"
+          ? "w-full rounded-2xl border border-purple-400/40 bg-gradient-to-br from-purple-500/22 to-fuchsia-500/10 p-3 text-left shadow-lg shadow-purple-500/10"
           : "w-full rounded-2xl border border-transparent p-3 text-left transition hover:border-slate-700/80 hover:bg-slate-900/70"
       }
     >
@@ -57,7 +60,7 @@ export function RoomItem({ room, isActive, onNavigate }: RoomItemProps) {
         <div
           className={
             isActive
-              ? "flex size-11 shrink-0 items-center justify-center rounded-xl bg-purple-500 text-white"
+              ? "flex size-11 shrink-0 items-center justify-center rounded-xl bg-purple-500 text-white shadow-lg shadow-purple-500/20"
               : "flex size-11 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-slate-300"
           }
         >
@@ -79,6 +82,12 @@ export function RoomItem({ room, isActive, onNavigate }: RoomItemProps) {
             ) : (
               <Globe2 className="size-3 shrink-0 text-emerald-300" />
             )}
+
+            {latestTime ? (
+              <span className="ml-auto shrink-0 text-[11px] font-bold text-slate-600">
+                {latestTime}
+              </span>
+            ) : null}
           </div>
 
           <div className="mt-1 flex items-center gap-2 text-xs font-semibold text-slate-400">
@@ -100,8 +109,12 @@ export function RoomItem({ room, isActive, onNavigate }: RoomItemProps) {
       <div className="mt-3 flex items-center justify-between gap-3">
         {room.isMember ? (
           <div className="flex items-center gap-2 text-xs font-bold text-emerald-300">
-            <span className="size-1.5 rounded-full bg-emerald-400" />
-            {room.currentUserRole === "owner" ? "Owner" : "Joined"}
+            <span className="size-1.5 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.8)]" />
+            {room.currentUserRole === "owner"
+              ? "Owner"
+              : room.currentUserRole === "admin"
+                ? "Admin"
+                : "Joined"}
           </div>
         ) : room.visibility === "public" ? (
           <div className="flex items-center gap-2 text-xs font-bold text-slate-400">
@@ -143,7 +156,11 @@ export function RoomItem({ room, isActive, onNavigate }: RoomItemProps) {
   }
 
   return (
-    <Link href={`/chat?room=${room.id}`} onClick={onNavigate}>
+    <Link
+      href={`/chat?room=${room.id}`}
+      onClick={onNavigate}
+      aria-current={isActive ? "page" : undefined}
+    >
       {content}
     </Link>
   );
