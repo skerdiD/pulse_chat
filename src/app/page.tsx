@@ -89,8 +89,8 @@ export default function HomePage() {
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link href="#preview" className="pulse-primary-button">
-                View app preview
+              <Link href="/chat" className="pulse-primary-button">
+                Open app preview
                 <ArrowRight className="size-4" />
               </Link>
               <Link href="#features" className="pulse-secondary-button">
@@ -179,14 +179,17 @@ export default function HomePage() {
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
-              <Link href="#preview" className="pulse-primary-button">
-                Preview shell
+              <Link href="/chat" className="pulse-primary-button">
+                Open chat app
                 <ArrowRight className="size-4" />
               </Link>
-              <div className="inline-flex items-center justify-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-4 py-3 text-sm font-bold text-emerald-200">
+              <Link
+                href="/signup"
+                className="inline-flex items-center justify-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-4 py-3 text-sm font-bold text-emerald-200 transition hover:border-emerald-300/40 hover:bg-emerald-400/15"
+              >
                 <CheckCircle2 className="size-4" />
-                Ready for auth next
-              </div>
+                Create account
+              </Link>
             </div>
           </div>
         </div>

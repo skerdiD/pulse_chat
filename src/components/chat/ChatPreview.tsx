@@ -1,4 +1,5 @@
 // src/components/chat/ChatPreview.tsx
+import Link from "next/link";
 import {
   Hash,
   MoreVertical,
@@ -69,9 +70,13 @@ export function ChatPreview() {
             <h3 className="text-lg font-black tracking-[-0.03em] text-white">
               Chat Rooms
             </h3>
-            <button className="flex size-9 items-center justify-center rounded-xl bg-purple-500 text-white shadow-lg shadow-purple-500/25 transition hover:bg-purple-400">
+            <Link
+              href="/chat"
+              aria-label="Open chat app to create a room"
+              className="flex size-9 items-center justify-center rounded-xl bg-purple-500 text-white shadow-lg shadow-purple-500/25 transition hover:bg-purple-400"
+            >
               +
-            </button>
+            </Link>
           </div>
 
           <label className="mb-5 flex h-11 items-center gap-2 rounded-xl border border-slate-700/70 bg-slate-950/70 px-3 text-sm text-slate-500">
@@ -139,9 +144,13 @@ export function ChatPreview() {
               </div>
             </div>
 
-            <button className="flex size-9 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-900 hover:text-white">
+            <Link
+              href="/chat"
+              aria-label="Open chat app room settings"
+              className="flex size-9 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-900 hover:text-white"
+            >
               <Settings className="size-4" />
-            </button>
+            </Link>
           </header>
 
           <div className="pulse-scrollbar flex-1 space-y-6 overflow-y-auto px-5 py-6">
@@ -179,25 +188,34 @@ export function ChatPreview() {
                     {message.reactions.length > 0 ? (
                       <div className="mt-3 flex flex-wrap gap-2">
                         {message.reactions.map(([emoji, count]) => (
-                          <button
+                          <Link
                             key={`${emoji}-${count}`}
+                            href="/chat"
                             className="inline-flex h-8 items-center gap-1.5 rounded-full border border-slate-700/80 bg-slate-900/80 px-3 text-xs font-bold text-slate-300 transition hover:border-purple-400/40 hover:bg-purple-500/10"
                           >
                             <span>{emoji}</span>
                             <span>{count}</span>
-                          </button>
+                          </Link>
                         ))}
                       </div>
                     ) : null}
                   </div>
 
                   <div className="hidden items-center gap-1 rounded-xl border border-slate-700/70 bg-slate-900/80 p-1 opacity-0 shadow-xl transition group-hover:opacity-100 sm:flex">
-                    <button className="flex size-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white">
+                    <Link
+                      href="/chat"
+                      aria-label="Open chat app reaction picker"
+                      className="flex size-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white"
+                    >
                       <Smile className="size-4" />
-                    </button>
-                    <button className="flex size-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white">
+                    </Link>
+                    <Link
+                      href="/chat"
+                      aria-label="Open chat app message actions"
+                      className="flex size-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white"
+                    >
                       <MoreVertical className="size-4" />
-                    </button>
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -209,12 +227,20 @@ export function ChatPreview() {
               <span className="flex-1 text-sm font-medium text-slate-500">
                 Type a message...
               </span>
-              <button className="text-slate-400 transition hover:text-white">
+              <Link
+                href="/chat"
+                aria-label="Open chat app emoji picker"
+                className="text-slate-400 transition hover:text-white"
+              >
                 <Smile className="size-5" />
-              </button>
-              <button className="flex size-9 items-center justify-center rounded-xl bg-purple-500 text-white shadow-lg shadow-purple-500/20 transition hover:bg-purple-400">
+              </Link>
+              <Link
+                href="/chat"
+                aria-label="Open chat app to send a message"
+                className="flex size-9 items-center justify-center rounded-xl bg-purple-500 text-white shadow-lg shadow-purple-500/20 transition hover:bg-purple-400"
+              >
                 <Send className="size-4" />
-              </button>
+              </Link>
             </div>
           </div>
         </section>

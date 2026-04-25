@@ -5,7 +5,7 @@ import { ArrowRight } from "lucide-react";
 import { AppLogo } from "@/components/shared/AppLogo";
 
 const navItems = [
-  { label: "Preview", href: "#preview" },
+  { label: "Open app", href: "/chat" },
   { label: "Features", href: "#features" },
 ];
 
@@ -30,12 +30,12 @@ export function MarketingNavbar() {
 
       <div className="flex items-center gap-2">
         <Link
-          href="#preview"
+          href="/login"
           className="hidden rounded-full px-4 py-2 text-sm font-bold text-slate-300 transition hover:text-white sm:inline-flex"
         >
-          View demo
+          Sign in
         </Link>
-        <Link href="#features" className="pulse-primary-button min-h-10 px-4 py-2">
+        <Link href="/signup" className="pulse-primary-button min-h-10 px-4 py-2">
           Get started
           <ArrowRight className="size-4" />
         </Link>
