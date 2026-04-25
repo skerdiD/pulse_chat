@@ -1,0 +1,245 @@
+/* src/app/globals.css */
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --background: #050816;
+  --foreground: #f8fafc;
+
+  --card: #0b1020;
+  --card-foreground: #f8fafc;
+
+  --popover: #0b1020;
+  --popover-foreground: #f8fafc;
+
+  --primary: #a855f7;
+  --primary-foreground: #ffffff;
+
+  --secondary: #111827;
+  --secondary-foreground: #e5e7eb;
+
+  --muted: #111827;
+  --muted-foreground: #94a3b8;
+
+  --accent: #1e293b;
+  --accent-foreground: #f8fafc;
+
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+
+  --border: #1e293b;
+  --input: #263244;
+  --ring: #a855f7;
+
+  --radius: 1rem;
+
+  --sidebar: #08111f;
+  --sidebar-foreground: #f8fafc;
+  --sidebar-primary: #a855f7;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #111827;
+  --sidebar-accent-foreground: #f8fafc;
+  --sidebar-border: #1e293b;
+  --sidebar-ring: #a855f7;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --radius-sm: calc(var(--radius) - 0.5rem);
+  --radius-md: calc(var(--radius) - 0.25rem);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 0.5rem);
+  --radius-2xl: calc(var(--radius) + 1rem);
+}
+
+* {
+  border-color: var(--border);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  overflow-x: hidden;
+  background:
+    radial-gradient(circle at top left, rgba(168, 85, 247, 0.22), transparent 32rem),
+    radial-gradient(circle at top right, rgba(14, 165, 233, 0.14), transparent 34rem),
+    linear-gradient(180deg, #050816 0%, #070b18 45%, #050816 100%);
+  color: var(--foreground);
+  font-feature-settings:
+    "rlig" 1,
+    "calt" 1;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: rgba(168, 85, 247, 0.35);
+  color: #ffffff;
+}
+
+button,
+a,
+input,
+textarea,
+select {
+  outline-color: transparent;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid rgba(168, 85, 247, 0.85);
+  outline-offset: 3px;
+}
+
+.pulse-grid-bg {
+  background-image:
+    linear-gradient(rgba(148, 163, 184, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.07) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: linear-gradient(to bottom, black, transparent 80%);
+}
+
+.pulse-card {
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  background:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.88), rgba(15, 23, 42, 0.56)),
+    rgba(15, 23, 42, 0.72);
+  box-shadow:
+    0 24px 80px rgba(0, 0, 0, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(18px);
+}
+
+.pulse-soft-card {
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  background: rgba(15, 23, 42, 0.52);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+}
+
+.pulse-gradient-text {
+  background: linear-gradient(135deg, #ffffff 0%, #d8b4fe 42%, #7dd3fc 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.pulse-primary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  border-radius: 9999px;
+  padding: 0.75rem 1.25rem;
+  background: linear-gradient(135deg, #a855f7, #7c3aed);
+  color: #ffffff;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  box-shadow:
+    0 14px 40px rgba(168, 85, 247, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    opacity 180ms ease;
+}
+
+.pulse-primary-button:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 18px 48px rgba(168, 85, 247, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.24);
+}
+
+.pulse-secondary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  border-radius: 9999px;
+  padding: 0.75rem 1.25rem;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: rgba(15, 23, 42, 0.58);
+  color: #e2e8f0;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background 180ms ease;
+}
+
+.pulse-secondary-button:hover {
+  transform: translateY(-1px);
+  border-color: rgba(168, 85, 247, 0.48);
+  background: rgba(30, 41, 59, 0.74);
+}
+
+.pulse-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
+}
+
+.pulse-scrollbar::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.pulse-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.pulse-scrollbar::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 9999px;
+  background: rgba(148, 163, 184, 0.35);
+  background-clip: content-box;
+}
+
+.pulse-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(168, 85, 247, 0.48);
+  background-clip: content-box;
+}
