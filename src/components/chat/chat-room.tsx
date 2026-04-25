@@ -1,74 +1,93 @@
 "use client";
 
 import { useState } from "react";
-import { Menu } from "lucide-react";
+import { LockKeyhole } from "lucide-react";
 
-import { ChatEmptyState } from "@/components/chat/chat-empty-state";
-import { ChatRoom } from "@/components/chat/chat-room";
-import { RoomSidebar } from "@/components/chat/room-sidebar";
+import { ChatHeader } from "@/components/chat/chat-header";
+import { MessageComposer } from "@/components/chat/message-composer";
+import { MessageList } from "@/components/chat/message-list";
+import { useRoomRealtime } from "@/hooks/use-room-realtime";
 import type {
   ChatMessage,
+  ChatMessageReplyPreview,
   ChatRoom as ChatRoomType,
   ChatRoomMember,
   CurrentChatUser,
 } from "@/types/chat";
 
-type ChatLayoutProps = {
-  rooms: ChatRoomType[];
-  activeRoomId: string | null;
+type ChatRoomProps = {
+  room: ChatRoomType;
   messages: ChatMessage[];
   members: ChatRoomMember[];
   currentUser: CurrentChatUser;
+  canSendMessages: boolean;
+  onOpenRooms: () => void;
 };
 
-export function ChatLayout({
-  rooms,
-  activeRoomId,
-  messages,
+export function ChatRoom({
+  room,
+  messages: initialMessages,
   members,
   currentUser,
-}: ChatLayoutProps) {
-  const [isMobileRoomsOpen, setIsMobileRoomsOpen] = useState(false);
-  const activeRoom = rooms.find((room) => room.id === activeRoomId) ?? null;
+  canSendMessages,
+  onOpenRooms,
+}: ChatRoomProps) {
+  const [replyToMessage, setReplyToMessage] =
+    useState<ChatMessageReplyPreview | null>(null);
+
+  const {
+    messages,
+    status: realtimeStatus,
+    typingUsers,
+    sendTyping,
+  } = useRoomRealtime({
+    roomId: room.id,
+    initialMessages,
+    currentUser,
+    enabled: canSendMessages,
+  });
 
   return (
-    <main className="flex min-h-screen overflow-hidden bg-[#050816] text-white">
-      <RoomSidebar
-        rooms={rooms}
-        activeRoomId={activeRoomId}
+    <div className="flex min-h-screen min-w-0 flex-1 flex-col">
+      <ChatHeader
+        room={room}
+        members={members}
         currentUser={currentUser}
-        isMobileOpen={isMobileRoomsOpen}
-        onMobileOpen={() => setIsMobileRoomsOpen(true)}
-        onMobileClose={() => setIsMobileRoomsOpen(false)}
+        realtimeStatus={realtimeStatus}
+        onOpenRooms={onOpenRooms}
       />
 
-      <section className="flex min-w-0 flex-1 flex-col">
-        {activeRoom ? (
-          <ChatRoom
-            room={activeRoom}
-            messages={messages}
-            members={members}
-            currentUser={currentUser}
-            canSendMessages={activeRoom.isMember}
-            onOpenRooms={() => setIsMobileRoomsOpen(true)}
-          />
-        ) : (
-          <div className="relative flex min-h-screen flex-1 flex-col">
-            <div className="absolute left-4 top-4 z-30 lg:hidden">
-              <button
-                type="button"
-                onClick={() => setIsMobileRoomsOpen(true)}
-                className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-slate-800 bg-slate-950/90 px-4 text-sm font-black text-white shadow-2xl shadow-black/40 backdrop-blur-xl"
-              >
-                <Menu className="size-4" />
-                Rooms
-              </button>
-            </div>
+      <MessageList
+        messages={messages}
+        currentUserId={currentUser.id}
+        roomName={room.name}
+        typingUsers={typingUsers}
+        onReply={(message) =>
+          setReplyToMessage({
+            id: message.id,
+            content: message.content,
+            authorUsername: message.author.username,
+            createdAt: message.createdAt,
+          })
+        }
+      />
 
-            <ChatEmptyState />
+      {canSendMessages ? (
+        <MessageComposer
+          roomId={room.id}
+          replyToMessage={replyToMessage}
+          onCancelReply={() => setReplyToMessage(null)}
+          onMessageSent={() => setReplyToMessage(null)}
+          onTyping={sendTyping}
+        />
+      ) : (
+        <div className="shrink-0 border-t border-slate-800/90 bg-slate-950/72 p-4 shadow-2xl shadow-black/20 backdrop-blur-xl">
+          <div className="mx-auto flex w-full max-w-5xl items-center gap-3 rounded-2xl border border-slate-800 bg-slate-950 p-4 text-sm font-semibold text-slate-400">
+            <LockKeyhole className="size-4 text-purple-300" />
+            Join this room before sending messages.
           </div>
-        )}
-      </section>
-    </main>
+        </div>
+      )}
+    </div>
   );
 }

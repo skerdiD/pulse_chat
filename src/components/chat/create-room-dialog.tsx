@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import {
   Globe2,
   Loader2,
@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
+import type { z } from "zod";
 
 import { createRoomAction } from "@/server/actions/rooms";
 import {
@@ -31,7 +32,11 @@ export function CreateRoomDialog({
   const [isOpen, setIsOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
-  const form = useForm<CreateRoomInput>({
+  const form = useForm<
+    z.input<typeof createRoomSchema>,
+    unknown,
+    CreateRoomInput
+  >({
     resolver: zodResolver(createRoomSchema),
     defaultValues: {
       name: "",
@@ -40,7 +45,10 @@ export function CreateRoomDialog({
     },
   });
 
-  const visibility = form.watch("visibility");
+  const visibility = useWatch({
+    control: form.control,
+    name: "visibility",
+  });
 
   function closeDialog() {
     if (isPending) {

@@ -17,7 +17,6 @@ type MessageItemProps = {
 
 export const MessageItem = memo(function MessageItem({
   message,
-  currentUserId,
   isOwnMessage,
   onReply,
 }: MessageItemProps) {

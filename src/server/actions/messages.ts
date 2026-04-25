@@ -29,7 +29,6 @@ async function protectSendMessageAction(userId: string) {
   try {
     const req = await request();
     const decision = await sendMessageAj.protect(req, {
-      requested: 1,
       userId,
     });
 

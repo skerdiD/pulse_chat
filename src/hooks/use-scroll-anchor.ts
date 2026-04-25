@@ -58,7 +58,7 @@ export function useScrollAnchor({
   useEffect(() => {
     if (itemCount === 0 || !latestItemId) {
       previousLatestItemIdRef.current = null;
-      setNewItemsCount(0);
+      queueMicrotask(() => setNewItemsCount(0));
       return;
     }
 
@@ -92,7 +92,9 @@ export function useScrollAnchor({
       return;
     }
 
-    setNewItemsCount((currentCount) => currentCount + 1);
+    queueMicrotask(() => {
+      setNewItemsCount((currentCount) => currentCount + 1);
+    });
   }, [
     checkIsNearBottom,
     currentUserId,

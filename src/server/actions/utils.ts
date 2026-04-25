@@ -65,7 +65,7 @@ export function getZodFieldErrors(error: ZodError): ActionFieldErrors {
   const fieldErrors: ActionFieldErrors = {};
 
   for (const [field, messages] of Object.entries(flattened)) {
-    if (messages && messages.length > 0) {
+    if (Array.isArray(messages) && messages.length > 0) {
       fieldErrors[field] = messages;
     }
   }

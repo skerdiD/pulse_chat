@@ -105,7 +105,9 @@ export function useRoomRealtime({
   enabled,
 }: UseRoomRealtimeParams) {
   const supabase = useMemo(() => createClient(), []);
-  const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
+  const [messages, setMessages] = useState<ChatMessage[]>(() =>
+    sortMessagesByCreatedAt(initialMessages),
+  );
   const [status, setStatus] = useState<RealtimeConnectionStatus>("loading");
   const [typingUsers, setTypingUsers] = useState<TypingUser[]>([]);
 
@@ -115,10 +117,6 @@ export function useRoomRealtime({
   const typingTimeoutsRef = useRef<
     Map<string, ReturnType<typeof setTimeout>>
   >(new Map());
-
-  useEffect(() => {
-    setMessages(sortMessagesByCreatedAt(initialMessages));
-  }, [initialMessages, roomId]);
 
   useEffect(() => {
     messageByIdRef.current = new Map(
@@ -300,16 +298,31 @@ export function useRoomRealtime({
   }, [currentUser.id, currentUser.username, enabled, roomId]);
 
   useEffect(() => {
-    if (!enabled) {
-      setStatus("disconnected");
-      setTypingUsers([]);
-      return;
-    }
-
     let isActive = true;
 
-    setStatus("loading");
-    setTypingUsers([]);
+    if (!enabled) {
+      queueMicrotask(() => {
+        if (!isActive) {
+          return;
+        }
+
+        setStatus("disconnected");
+        setTypingUsers([]);
+      });
+
+      return () => {
+        isActive = false;
+      };
+    }
+
+    queueMicrotask(() => {
+      if (!isActive) {
+        return;
+      }
+
+      setStatus("loading");
+      setTypingUsers([]);
+    });
     typingUsersRef.current.clear();
 
     const channel = supabase
@@ -444,13 +457,15 @@ export function useRoomRealtime({
       });
 
     channelRef.current = channel;
+    const typingTimeouts = typingTimeoutsRef.current;
+    const typingUsersById = typingUsersRef.current;
 
     return () => {
       isActive = false;
 
-      typingTimeoutsRef.current.forEach((timeout) => clearTimeout(timeout));
-      typingTimeoutsRef.current.clear();
-      typingUsersRef.current.clear();
+      typingTimeouts.forEach((timeout) => clearTimeout(timeout));
+      typingTimeouts.clear();
+      typingUsersById.clear();
       setTypingUsers([]);
 
       if (channelRef.current) {

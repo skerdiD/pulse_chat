@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { Loader2, LockKeyhole, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
+import type { z } from "zod";
 
 import { loginAction } from "@/server/actions/auth";
 import { loginSchema, type LoginInput } from "@/server/validators/auth";
@@ -14,7 +15,7 @@ export function LoginForm() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
-  const form = useForm<LoginInput>({
+  const form = useForm<z.input<typeof loginSchema>, unknown, LoginInput>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
       email: "",

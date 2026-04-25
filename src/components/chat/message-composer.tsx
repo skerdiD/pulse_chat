@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useTransition } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import {
   CornerUpLeft,
   Loader2,
@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
+import type { z } from "zod";
 
 import { ReplyPreview } from "@/components/chat/reply-preview";
 import { sendMessageAction } from "@/server/actions/messages";
@@ -42,7 +43,11 @@ export function MessageComposer({
   const lastTypingSentAtRef = useRef(0);
   const [isPending, startTransition] = useTransition();
 
-  const form = useForm<SendMessageInput>({
+  const form = useForm<
+    z.input<typeof sendMessageSchema>,
+    unknown,
+    SendMessageInput
+  >({
     resolver: zodResolver(sendMessageSchema),
     defaultValues: {
       roomId,
@@ -52,7 +57,10 @@ export function MessageComposer({
     mode: "onSubmit",
   });
 
-  const content = form.watch("content");
+  const content = useWatch({
+    control: form.control,
+    name: "content",
+  });
   const contentField = form.register("content");
 
   useEffect(() => {
@@ -140,6 +148,10 @@ export function MessageComposer({
     }
   }
 
+  function handleFormSubmit(event: React.FormEvent<HTMLFormElement>) {
+    void form.handleSubmit(onSubmit)(event);
+  }
+
   return (
     <div className="shrink-0 border-t border-slate-800/90 bg-slate-950/72 p-3 shadow-2xl shadow-black/20 backdrop-blur-xl sm:p-4">
       <div className="mx-auto w-full max-w-5xl">
@@ -169,7 +181,7 @@ export function MessageComposer({
           </div>
         ) : null}
 
-        <form onSubmit={form.handleSubmit(onSubmit)}>
+        <form onSubmit={handleFormSubmit}>
           <div className="rounded-[1.5rem] border border-slate-800 bg-slate-950 shadow-2xl shadow-black/20 transition focus-within:border-purple-400/40 focus-within:ring-4 focus-within:ring-purple-500/10">
             <div className="flex items-end gap-1.5 p-2 sm:gap-2">
               <button

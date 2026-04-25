@@ -41,7 +41,6 @@ async function protectCreateRoomAction(userId: string) {
   try {
     const req = await request();
     const decision = await createRoomAj.protect(req, {
-      requested: 1,
       userId,
     });
 

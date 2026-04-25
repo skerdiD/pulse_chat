@@ -22,7 +22,6 @@ async function protectReactionAction(userId: string) {
   try {
     const req = await request();
     const decision = await toggleReactionAj.protect(req, {
-      requested: 1,
       userId,
     });
 
@@ -68,7 +67,14 @@ export async function toggleReactionAction(
     action: "added" | "removed";
   }>
 > {
-  return withAuthedValidatedInput(
+  return withAuthedValidatedInput<
+    typeof toggleReactionSchema,
+    {
+      messageId: string;
+      emoji: string;
+      action: "added" | "removed";
+    }
+  >(
     toggleReactionSchema,
     input,
     async ({ input, user }) => {

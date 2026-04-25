@@ -45,6 +45,7 @@ export function ChatLayout({
       <section className="flex min-w-0 flex-1 flex-col">
         {activeRoom ? (
           <ChatRoom
+            key={activeRoom.id}
             room={activeRoom}
             messages={messages}
             members={members}

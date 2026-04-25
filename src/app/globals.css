@@ -1,4 +1,3 @@
-/* src/app/globals.css */
 @import "tailwindcss";
 
 @custom-variant dark (&:is(.dark *));
@@ -95,19 +94,21 @@
 
 html {
   scroll-behavior: smooth;
+  background: #050816;
 }
 
 body {
   min-height: 100vh;
   overflow-x: hidden;
   background:
-    radial-gradient(circle at top left, rgba(168, 85, 247, 0.22), transparent 32rem),
-    radial-gradient(circle at top right, rgba(14, 165, 233, 0.14), transparent 34rem),
+    radial-gradient(circle at top left, rgba(168, 85, 247, 0.2), transparent 34rem),
+    radial-gradient(circle at top right, rgba(14, 165, 233, 0.12), transparent 34rem),
     linear-gradient(180deg, #050816 0%, #070b18 45%, #050816 100%);
   color: var(--foreground);
   font-feature-settings:
     "rlig" 1,
-    "calt" 1;
+    "calt" 1,
+    "ss01" 1;
   text-rendering: optimizeLegibility;
 }
 
@@ -129,33 +130,43 @@ a:focus-visible,
 input:focus-visible,
 textarea:focus-visible,
 select:focus-visible {
-  outline: 2px solid rgba(168, 85, 247, 0.85);
+  outline: 2px solid rgba(168, 85, 247, 0.9);
   outline-offset: 3px;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
 }
 
 .pulse-grid-bg {
   background-image:
-    linear-gradient(rgba(148, 163, 184, 0.07) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(148, 163, 184, 0.07) 1px, transparent 1px);
+    linear-gradient(rgba(148, 163, 184, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.06) 1px, transparent 1px);
   background-size: 44px 44px;
-  mask-image: linear-gradient(to bottom, black, transparent 80%);
+  mask-image: linear-gradient(to bottom, black, transparent 82%);
 }
 
 .pulse-card {
   border: 1px solid rgba(148, 163, 184, 0.14);
   background:
-    linear-gradient(180deg, rgba(15, 23, 42, 0.88), rgba(15, 23, 42, 0.56)),
+    linear-gradient(180deg, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.58)),
     rgba(15, 23, 42, 0.72);
   box-shadow:
-    0 24px 80px rgba(0, 0, 0, 0.34),
-    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    0 24px 80px rgba(0, 0, 0, 0.36),
+    inset 0 1px 0 rgba(255, 255, 255, 0.045);
   backdrop-filter: blur(18px);
 }
 
 .pulse-soft-card {
   border: 1px solid rgba(148, 163, 184, 0.12);
-  background: rgba(15, 23, 42, 0.52);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+  background: rgba(15, 23, 42, 0.54);
+  box-shadow:
+    0 18px 60px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.035);
 }
 
 .pulse-gradient-text {
@@ -167,15 +178,15 @@ select:focus-visible {
 
 .pulse-primary-button {
   display: inline-flex;
+  min-height: 2.75rem;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  min-height: 2.75rem;
   border-radius: 9999px;
   padding: 0.75rem 1.25rem;
   background: linear-gradient(135deg, #a855f7, #7c3aed);
   color: #ffffff;
-  font-weight: 700;
+  font-weight: 800;
   letter-spacing: -0.01em;
   box-shadow:
     0 14px 40px rgba(168, 85, 247, 0.32),
@@ -195,16 +206,16 @@ select:focus-visible {
 
 .pulse-secondary-button {
   display: inline-flex;
+  min-height: 2.75rem;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  min-height: 2.75rem;
+  border: 1px solid rgba(148, 163, 184, 0.2);
   border-radius: 9999px;
   padding: 0.75rem 1.25rem;
-  border: 1px solid rgba(148, 163, 184, 0.2);
   background: rgba(15, 23, 42, 0.58);
   color: #e2e8f0;
-  font-weight: 700;
+  font-weight: 800;
   letter-spacing: -0.01em;
   transition:
     transform 180ms ease,
@@ -220,7 +231,7 @@ select:focus-visible {
 
 .pulse-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
+  scrollbar-color: rgba(148, 163, 184, 0.34) transparent;
 }
 
 .pulse-scrollbar::-webkit-scrollbar {
@@ -235,11 +246,52 @@ select:focus-visible {
 .pulse-scrollbar::-webkit-scrollbar-thumb {
   border: 3px solid transparent;
   border-radius: 9999px;
-  background: rgba(148, 163, 184, 0.35);
+  background: rgba(148, 163, 184, 0.34);
   background-clip: content-box;
 }
 
 .pulse-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(168, 85, 247, 0.48);
+  background: rgba(168, 85, 247, 0.5);
   background-clip: content-box;
+}
+
+.pulse-skeleton {
+  position: relative;
+  overflow: hidden;
+  background: rgba(30, 41, 59, 0.7);
+}
+
+.pulse-skeleton::after {
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.06),
+    transparent
+  );
+  animation: pulse-shimmer 1.45s infinite;
+  content: "";
+}
+
+@keyframes pulse-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.001ms !important;
+  }
 }

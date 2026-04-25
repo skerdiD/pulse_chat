@@ -3,9 +3,10 @@
 import { useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Save, UserRound, X } from "lucide-react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
+import type { z } from "zod";
 
 import { updateProfileAction } from "@/server/actions/profile";
 import {
@@ -37,7 +38,11 @@ export function ProfileSettingsDialog({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
-  const form = useForm<UpdateProfileInput>({
+  const form = useForm<
+    z.input<typeof updateProfileSchema>,
+    unknown,
+    UpdateProfileInput
+  >({
     resolver: zodResolver(updateProfileSchema),
     defaultValues: {
       username: currentUser.username,
@@ -45,8 +50,14 @@ export function ProfileSettingsDialog({
     },
   });
 
-  const avatarUrl = form.watch("avatarUrl");
-  const username = form.watch("username");
+  const avatarUrl = useWatch({
+    control: form.control,
+    name: "avatarUrl",
+  });
+  const username = useWatch({
+    control: form.control,
+    name: "username",
+  });
 
   useEffect(() => {
     if (isOpen) {
