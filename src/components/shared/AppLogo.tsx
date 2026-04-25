@@ -1,15 +1,8 @@
-// src/components/shared/AppLogo.tsx
 import { MessageSquareText } from "lucide-react";
 
-import { cn } from "@/lib/utils";
-
-type AppLogoProps = {
-  className?: string;
-};
-
-export function AppLogo({ className }: AppLogoProps) {
+export function AppLogo() {
   return (
-    <div className={cn("flex items-center gap-3", className)}>
+    <div className="flex items-center gap-3">
       <div className="relative flex size-11 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-400 via-purple-500 to-fuchsia-600 text-white shadow-lg shadow-purple-500/25">
         <MessageSquareText className="size-5" />
         <span className="absolute -right-0.5 -top-0.5 size-3 rounded-full border-2 border-slate-950 bg-emerald-400" />
