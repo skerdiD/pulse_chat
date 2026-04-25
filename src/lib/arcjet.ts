@@ -30,3 +30,12 @@ export const sendMessageAj = aj.withRule(
     characteristics: ["userId"],
   }),
 );
+
+export const toggleReactionAj = aj.withRule(
+  fixedWindow({
+    mode: "LIVE",
+    window: "1m",
+    max: 80,
+    characteristics: ["userId"],
+  }),
+);

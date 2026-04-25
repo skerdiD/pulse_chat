@@ -44,6 +44,12 @@ export type ChatMessageReplyPreview = {
   createdAt: string;
 };
 
+export type ChatMessageReactionSummary = {
+  emoji: string;
+  count: number;
+  reactedByCurrentUser: boolean;
+};
+
 export type ChatMessage = {
   id: string;
   roomId: string;
@@ -55,4 +61,18 @@ export type ChatMessage = {
   updatedAt: string;
   author: ChatMessageAuthor;
   replyToMessage: ChatMessageReplyPreview | null;
+  reactions: ChatMessageReactionSummary[];
+};
+
+export type RealtimeConnectionStatus =
+  | "connected"
+  | "loading"
+  | "reconnecting"
+  | "disconnected"
+  | "error";
+
+export type TypingUser = {
+  userId: string;
+  username: string;
+  at: string;
 };

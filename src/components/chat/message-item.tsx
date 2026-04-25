@@ -1,20 +1,13 @@
 "use client";
 
-import {
-  Check,
-  Copy,
-  CornerUpLeft,
-  MoreHorizontal,
-  SmilePlus,
-} from "lucide-react";
-import { useState, useTransition } from "react";
-import { toast } from "sonner";
-
+import { MessageActions } from "@/components/chat/message-actions";
+import { ReactionBadge } from "@/components/chat/reaction-badge";
 import { ReplyPreview } from "@/components/chat/reply-preview";
 import type { ChatMessage } from "@/types/chat";
 
 type MessageItemProps = {
   message: ChatMessage;
+  currentUserId: string;
   isOwnMessage: boolean;
   onReply: () => void;
 };
@@ -35,29 +28,19 @@ function getInitials(username: string) {
     .toUpperCase();
 }
 
-export function MessageItem({ message, isOwnMessage, onReply }: MessageItemProps) {
-  const [copied, setCopied] = useState(false);
-  const [isCopying, startCopyTransition] = useTransition();
+export function MessageItem({
+  message,
+  currentUserId,
+  isOwnMessage,
+  onReply,
+}: MessageItemProps) {
+  const reactions = [...message.reactions].sort((a, b) => {
+    if (b.count !== a.count) {
+      return b.count - a.count;
+    }
 
-  function copyMessage() {
-    startCopyTransition(async () => {
-      try {
-        await navigator.clipboard.writeText(message.content);
-        setCopied(true);
-        toast.success("Message copied.");
-
-        window.setTimeout(() => {
-          setCopied(false);
-        }, 1200);
-      } catch {
-        toast.error("Unable to copy message.");
-      }
-    });
-  }
-
-  function reactPlaceholder() {
-    toast.info("Emoji reactions are coming next.");
-  }
+    return a.emoji.localeCompare(b.emoji);
+  });
 
   return (
     <article className="group relative rounded-3xl px-2 py-3 transition hover:bg-slate-900/45 sm:px-3">
@@ -113,72 +96,35 @@ export function MessageItem({ message, isOwnMessage, onReply }: MessageItemProps
           <p className="mt-1 whitespace-pre-wrap break-words text-sm leading-6 text-slate-100">
             {message.content}
           </p>
+
+          {reactions.length > 0 ? (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {reactions.map((reaction) => (
+                <ReactionBadge
+                  key={reaction.emoji}
+                  messageId={message.id}
+                  reaction={reaction}
+                  currentUserId={currentUserId}
+                />
+              ))}
+            </div>
+          ) : null}
         </div>
 
-        <div className="absolute right-3 top-2 hidden items-center gap-1 rounded-2xl border border-slate-800 bg-slate-950/95 p-1 opacity-0 shadow-2xl shadow-black/30 backdrop-blur-xl transition group-hover:opacity-100 sm:flex">
-          <button
-            type="button"
-            onClick={onReply}
-            className="flex size-8 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-800 hover:text-white"
-            aria-label="Reply to message"
-          >
-            <CornerUpLeft className="size-4" />
-          </button>
-
-          <button
-            type="button"
-            onClick={copyMessage}
-            disabled={isCopying}
-            className="flex size-8 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-800 hover:text-white disabled:opacity-60"
-            aria-label="Copy message"
-          >
-            {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
-          </button>
-
-          <button
-            type="button"
-            onClick={reactPlaceholder}
-            className="flex size-8 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-800 hover:text-white"
-            aria-label="React to message"
-          >
-            <SmilePlus className="size-4" />
-          </button>
-
-          <button
-            type="button"
-            className="flex size-8 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-800 hover:text-white"
-            aria-label="More message actions"
-          >
-            <MoreHorizontal className="size-4" />
-          </button>
-        </div>
+        <MessageActions
+          messageId={message.id}
+          messageContent={message.content}
+          onReply={onReply}
+          variant="desktop"
+        />
       </div>
 
-      <div className="mt-3 flex gap-2 pl-[52px] sm:hidden">
-        <button
-          type="button"
-          onClick={onReply}
-          className="rounded-full border border-slate-800 bg-slate-950/70 px-3 py-1.5 text-xs font-bold text-slate-400"
-        >
-          Reply
-        </button>
-
-        <button
-          type="button"
-          onClick={copyMessage}
-          className="rounded-full border border-slate-800 bg-slate-950/70 px-3 py-1.5 text-xs font-bold text-slate-400"
-        >
-          Copy
-        </button>
-
-        <button
-          type="button"
-          onClick={reactPlaceholder}
-          className="rounded-full border border-slate-800 bg-slate-950/70 px-3 py-1.5 text-xs font-bold text-slate-400"
-        >
-          React
-        </button>
-      </div>
+      <MessageActions
+        messageId={message.id}
+        messageContent={message.content}
+        onReply={onReply}
+        variant="mobile"
+      />
     </article>
   );
 }

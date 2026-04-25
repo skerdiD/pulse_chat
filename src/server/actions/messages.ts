@@ -2,10 +2,15 @@
 
 import { revalidatePath } from "next/cache";
 import { request } from "@arcjet/next";
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, inArray } from "drizzle-orm";
 
 import { db } from "@/db";
-import { messages, profiles, roomMembers } from "@/db/schema";
+import {
+  messageReactions,
+  messages,
+  profiles,
+  roomMembers,
+} from "@/db/schema";
 import { sendMessageAj } from "@/lib/arcjet";
 import {
   actionError,
@@ -18,7 +23,7 @@ import {
   sendMessageSchema,
   type SendMessageInput,
 } from "@/server/validators/chat";
-import type { ChatMessage } from "@/types/chat";
+import type { ChatMessage, ChatMessageReactionSummary } from "@/types/chat";
 
 async function protectSendMessageAction(userId: string) {
   try {
@@ -51,6 +56,53 @@ async function isRoomMember(roomId: string, userId: string) {
     .limit(1);
 
   return Boolean(membership);
+}
+
+function buildReactionMap(
+  reactionRows: Array<{
+    messageId: string;
+    userId: string;
+    emoji: string;
+  }>,
+  currentUserId: string,
+) {
+  const byMessageId = new Map<string, Map<string, ChatMessageReactionSummary>>();
+
+  for (const reaction of reactionRows) {
+    const emojiMap = byMessageId.get(reaction.messageId) ?? new Map();
+
+    const existing =
+      emojiMap.get(reaction.emoji) ??
+      {
+        emoji: reaction.emoji,
+        count: 0,
+        reactedByCurrentUser: false,
+      };
+
+    existing.count += 1;
+
+    if (reaction.userId === currentUserId) {
+      existing.reactedByCurrentUser = true;
+    }
+
+    emojiMap.set(reaction.emoji, existing);
+    byMessageId.set(reaction.messageId, emojiMap);
+  }
+
+  return byMessageId;
+}
+
+function getReactionsForMessage(
+  reactionMap: Map<string, Map<string, ChatMessageReactionSummary>>,
+  messageId: string,
+) {
+  return Array.from(reactionMap.get(messageId)?.values() ?? []).sort((a, b) => {
+    if (b.count !== a.count) {
+      return b.count - a.count;
+    }
+
+    return a.emoji.localeCompare(b.emoji);
+  });
 }
 
 export async function getMessagesForRoom(
@@ -88,6 +140,22 @@ export async function getMessagesForRoom(
         .where(eq(messages.roomId, input.roomId))
         .orderBy(asc(messages.createdAt));
 
+      const messageIds = rows.map((message) => message.id);
+
+      const reactionRows =
+        messageIds.length > 0
+          ? await db
+              .select({
+                messageId: messageReactions.messageId,
+                userId: messageReactions.userId,
+                emoji: messageReactions.emoji,
+              })
+              .from(messageReactions)
+              .where(inArray(messageReactions.messageId, messageIds))
+          : [];
+
+      const reactionMap = buildReactionMap(reactionRows, user.id);
+
       const messagePreviewById = new Map(
         rows.map((message) => [
           message.id,
@@ -117,6 +185,7 @@ export async function getMessagesForRoom(
         replyToMessage: message.replyToMessageId
           ? messagePreviewById.get(message.replyToMessageId) ?? null
           : null,
+        reactions: getReactionsForMessage(reactionMap, message.id),
       }));
 
       return actionSuccess({

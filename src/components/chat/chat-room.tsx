@@ -6,6 +6,7 @@ import { LockKeyhole, MessageSquareText } from "lucide-react";
 import { ChatHeader } from "@/components/chat/chat-header";
 import { MessageComposer } from "@/components/chat/message-composer";
 import { MessageList } from "@/components/chat/message-list";
+import { useRoomRealtime } from "@/hooks/use-room-realtime";
 import type {
   ChatMessage,
   ChatMessageReplyPreview,
@@ -29,6 +30,18 @@ export function ChatRoom({
   const [replyTarget, setReplyTarget] =
     useState<ChatMessageReplyPreview | null>(null);
 
+  const {
+    messages: liveMessages,
+    status,
+    typingUsers,
+    sendTyping,
+  } = useRoomRealtime({
+    roomId: room.id,
+    initialMessages: messages,
+    currentUser,
+    enabled: canSendMessages,
+  });
+
   const selectedReplyTarget = useMemo(() => replyTarget, [replyTarget]);
 
   function handleReply(message: ChatMessage) {
@@ -42,14 +55,15 @@ export function ChatRoom({
 
   return (
     <>
-      <ChatHeader room={room} />
+      <ChatHeader room={room} realtimeStatus={status} />
 
       {canSendMessages ? (
         <>
           <MessageList
-            messages={messages}
+            messages={liveMessages}
             currentUserId={currentUser.id}
             roomName={room.name}
+            typingUsers={typingUsers}
             onReply={handleReply}
           />
 
@@ -59,6 +73,7 @@ export function ChatRoom({
             replyToMessage={selectedReplyTarget}
             onCancelReply={() => setReplyTarget(null)}
             onMessageSent={() => setReplyTarget(null)}
+            onTyping={sendTyping}
           />
         </>
       ) : (

@@ -7,13 +7,15 @@ import {
   UsersRound,
 } from "lucide-react";
 
-import type { ChatRoom } from "@/types/chat";
+import { RealtimeStatus } from "@/components/chat/realtime-status";
+import type { ChatRoom, RealtimeConnectionStatus } from "@/types/chat";
 
 type ChatHeaderProps = {
   room: ChatRoom;
+  realtimeStatus: RealtimeConnectionStatus;
 };
 
-export function ChatHeader({ room }: ChatHeaderProps) {
+export function ChatHeader({ room, realtimeStatus }: ChatHeaderProps) {
   return (
     <header className="flex h-20 shrink-0 items-center justify-between border-b border-slate-800/90 bg-slate-950/60 px-4 backdrop-blur-xl sm:px-6 lg:h-[76px]">
       <div className="flex min-w-0 items-center gap-3">
@@ -59,6 +61,8 @@ export function ChatHeader({ room }: ChatHeaderProps) {
       </div>
 
       <div className="flex shrink-0 items-center gap-2">
+        <RealtimeStatus status={realtimeStatus} />
+
         <button
           type="button"
           className="hidden size-10 items-center justify-center rounded-xl border border-slate-800 bg-slate-950/70 text-slate-400 transition hover:border-purple-400/30 hover:text-white sm:flex"

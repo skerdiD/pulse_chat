@@ -1,37 +1,73 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
 import { Loader2, MessageSquareText } from "lucide-react";
 
 import { MessageItem } from "@/components/chat/message-item";
-import type { ChatMessage } from "@/types/chat";
+import { useScrollAnchor } from "@/hooks/use-scroll-anchor";
+import type { ChatMessage, TypingUser } from "@/types/chat";
 
 type MessageListProps = {
   messages: ChatMessage[];
   currentUserId: string;
   roomName: string;
+  typingUsers: TypingUser[];
   isLoading?: boolean;
   onReply: (message: ChatMessage) => void;
 };
+
+function getTypingText(users: TypingUser[]) {
+  if (users.length === 1) {
+    return `${users[0].username} is typing`;
+  }
+
+  if (users.length === 2) {
+    return `${users[0].username} and ${users[1].username} are typing`;
+  }
+
+  return "Several people are typing";
+}
+
+function TypingIndicator({ users }: { users: TypingUser[] }) {
+  if (users.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="px-3 py-2">
+      <div className="inline-flex items-center gap-2 rounded-full border border-slate-800 bg-slate-950/80 px-3 py-2 text-xs font-bold text-slate-400 shadow-xl shadow-black/20">
+        <span>{getTypingText(users)}</span>
+        <span className="flex items-center gap-1">
+          <span className="size-1.5 animate-bounce rounded-full bg-purple-300 [animation-delay:-0.2s]" />
+          <span className="size-1.5 animate-bounce rounded-full bg-purple-300 [animation-delay:-0.1s]" />
+          <span className="size-1.5 animate-bounce rounded-full bg-purple-300" />
+        </span>
+      </div>
+    </div>
+  );
+}
 
 export function MessageList({
   messages,
   currentUserId,
   roomName,
+  typingUsers,
   isLoading = false,
   onReply,
 }: MessageListProps) {
-  const bottomRef = useRef<HTMLDivElement | null>(null);
-  const latestMessageId = messages.at(-1)?.id;
+  const latestMessage = messages.at(-1) ?? null;
 
-  const groupedMessages = useMemo(() => messages, [messages]);
-
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({
-      behavior: "smooth",
-      block: "end",
-    });
-  }, [latestMessageId]);
+  const {
+    containerRef,
+    bottomRef,
+    handleScroll,
+    newItemsCount,
+    scrollToBottom,
+  } = useScrollAnchor({
+    itemCount: messages.length,
+    latestItemId: latestMessage?.id ?? null,
+    latestItemUserId: latestMessage?.userId ?? null,
+    currentUserId,
+  });
 
   if (isLoading) {
     return (
@@ -72,25 +108,50 @@ export function MessageList({
             <span className="font-bold text-slate-200">{roomName}</span> yet.
             Send the first message and make this room feel alive.
           </p>
+
+          <TypingIndicator users={typingUsers} />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="pulse-scrollbar min-h-0 flex-1 overflow-y-auto px-3 py-5 sm:px-5 lg:px-6">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-1">
-        {groupedMessages.map((message) => (
-          <MessageItem
-            key={message.id}
-            message={message}
-            isOwnMessage={message.userId === currentUserId}
-            onReply={() => onReply(message)}
-          />
-        ))}
+    <div className="relative min-h-0 flex-1">
+      <div
+        ref={containerRef}
+        onScroll={handleScroll}
+        className="pulse-scrollbar h-full overflow-y-auto px-3 py-5 sm:px-5 lg:px-6"
+      >
+        <div className="mx-auto flex w-full max-w-5xl flex-col gap-1">
+          {messages.map((message) => (
+            <MessageItem
+              key={message.id}
+              message={message}
+              currentUserId={currentUserId}
+              isOwnMessage={message.userId === currentUserId}
+              onReply={() => onReply(message)}
+            />
+          ))}
 
-        <div ref={bottomRef} className="h-1" />
+          <TypingIndicator users={typingUsers} />
+
+          <div ref={bottomRef} className="h-1" />
+        </div>
       </div>
+
+      {newItemsCount > 0 ? (
+        <div className="pointer-events-none absolute bottom-4 left-1/2 z-20 -translate-x-1/2">
+          <button
+            type="button"
+            onClick={() => scrollToBottom("smooth")}
+            className="pointer-events-auto rounded-full border border-purple-400/30 bg-purple-500 px-4 py-2 text-xs font-black text-white shadow-2xl shadow-purple-500/30 transition hover:-translate-y-0.5 hover:bg-purple-400"
+          >
+            {newItemsCount === 1
+              ? "1 new message"
+              : `${newItemsCount} new messages`}
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }

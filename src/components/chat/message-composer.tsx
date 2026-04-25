@@ -27,6 +27,7 @@ type MessageComposerProps = {
   replyToMessage: ChatMessageReplyPreview | null;
   onCancelReply: () => void;
   onMessageSent: () => void;
+  onTyping?: () => void;
 };
 
 export function MessageComposer({
@@ -34,9 +35,11 @@ export function MessageComposer({
   replyToMessage,
   onCancelReply,
   onMessageSent,
+  onTyping,
 }: MessageComposerProps) {
   const router = useRouter();
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const lastTypingSentAtRef = useRef(0);
   const [isPending, startTransition] = useTransition();
 
   const form = useForm<SendMessageInput>({
@@ -50,6 +53,7 @@ export function MessageComposer({
   });
 
   const content = form.watch("content");
+  const contentField = form.register("content");
 
   useEffect(() => {
     form.setValue("roomId", roomId);
@@ -57,10 +61,26 @@ export function MessageComposer({
 
   useEffect(() => {
     form.setValue("replyToMessageId", replyToMessage?.id ?? undefined);
+
     if (replyToMessage) {
       textareaRef.current?.focus();
     }
   }, [form, replyToMessage]);
+
+  function emitTyping(value: string) {
+    if (!value.trim()) {
+      return;
+    }
+
+    const now = Date.now();
+
+    if (now - lastTypingSentAtRef.current < 1200) {
+      return;
+    }
+
+    lastTypingSentAtRef.current = now;
+    onTyping?.();
+  }
 
   function onSubmit(values: SendMessageInput) {
     form.clearErrors("root");
@@ -81,13 +101,15 @@ export function MessageComposer({
         return;
       }
 
+      lastTypingSentAtRef.current = 0;
+
       form.reset({
         roomId,
         content: "",
         replyToMessageId: undefined,
       });
+
       onMessageSent();
-      toast.success(result.message ?? "Message sent.");
       router.refresh();
     });
   }
@@ -141,12 +163,20 @@ export function MessageComposer({
               </button>
 
               <textarea
-                ref={textareaRef}
+                ref={(node) => {
+                  contentField.ref(node);
+                  textareaRef.current = node;
+                }}
+                name={contentField.name}
+                onBlur={contentField.onBlur}
+                onChange={(event) => {
+                  contentField.onChange(event);
+                  emitTyping(event.target.value);
+                }}
                 rows={1}
                 placeholder="Type a message..."
                 aria-invalid={Boolean(form.formState.errors.content)}
                 onKeyDown={handleKeyDown}
-                {...form.register("content")}
                 className="pulse-scrollbar max-h-40 min-h-11 flex-1 resize-none bg-transparent px-1 py-3 text-sm font-medium leading-6 text-white outline-none placeholder:text-slate-600"
               />
 
