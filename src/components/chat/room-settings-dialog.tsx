@@ -45,11 +45,9 @@ export function RoomSettingsDialog({
 
       {isOpen ? (
         <div className="fixed inset-0 z-[60] flex items-center justify-center px-4 py-6">
-          <button
-            type="button"
-            aria-label="Close room settings"
-            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
-            onClick={() => setIsOpen(false)}
+          <div
+            aria-hidden="true"
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm"
           />
 
           <section
@@ -118,7 +116,7 @@ export function RoomSettingsDialog({
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
-                className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-slate-800 bg-slate-950 text-slate-400 transition hover:text-white"
+                className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-slate-800 bg-slate-950 text-slate-400 transition hover:border-purple-400/30 hover:text-white"
                 aria-label="Close room settings"
               >
                 <X className="size-4" />
