@@ -109,6 +109,15 @@ describe("profile validators", () => {
     expect(result.success).toBe(false);
   });
 
+  it("rejects ftp avatar URLs", () => {
+    const result = updateProfileSchema.safeParse({
+      username: "Skerdi Dev",
+      avatarUrl: "ftp://example.com/avatar.png"
+    });
+
+    expect(result.success).toBe(false);
+  });
+
   it("rejects avatar URLs over 500 characters", () => {
     const longUrl = `https://example.com/${"a".repeat(500)}`;
 

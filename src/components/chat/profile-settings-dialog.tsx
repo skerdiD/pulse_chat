@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { z } from "zod";
 
+import { getSafeAvatarUrl } from "@/lib/avatar";
 import { updateProfileAction } from "@/server/actions/profile";
 import {
   updateProfileSchema,
@@ -58,6 +59,7 @@ export function ProfileSettingsDialog({
     control: form.control,
     name: "username",
   });
+  const previewAvatarUrl = getSafeAvatarUrl(avatarUrl);
 
   useEffect(() => {
     if (isOpen) {
@@ -147,12 +149,13 @@ export function ProfileSettingsDialog({
         <div className="mb-6 rounded-3xl border border-slate-800 bg-slate-900/50 p-4">
           <div className="flex items-center gap-4">
             <div className="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-3xl bg-gradient-to-br from-purple-400 via-purple-500 to-fuchsia-600 text-lg font-black text-white shadow-lg shadow-purple-500/20">
-              {avatarUrl ? (
+              {previewAvatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={avatarUrl}
+                  src={previewAvatarUrl}
                   alt={`${username || currentUser.username} avatar preview`}
                   className="size-full object-cover"
+                  referrerPolicy="no-referrer"
                 />
               ) : (
                 getInitials(username || currentUser.username)

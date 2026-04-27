@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 
+import { getSafeAvatarUrl } from "@/lib/avatar";
 import { createClient } from "@/lib/supabase/client";
 import type {
   ChatMessage,
@@ -145,7 +146,7 @@ export function useRoomRealtime({
       return {
         id: profile?.id ?? userId,
         username: profile?.username ?? "Unknown user",
-        avatarUrl: profile?.avatar_url ?? null,
+        avatarUrl: getSafeAvatarUrl(profile?.avatar_url),
       };
     },
     [supabase],

@@ -2,10 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { request } from "@arcjet/next";
 import type { User } from "@supabase/supabase-js";
 
 import { db } from "@/db";
 import { profiles } from "@/db/schema";
+import { authAj } from "@/lib/arcjet";
 import { createClient } from "@/lib/supabase/server";
 import {
   loginSchema,
@@ -19,6 +21,30 @@ type AuthActionResult = {
   message: string;
   redirectTo?: string;
 };
+
+async function protectAuthAction(): Promise<AuthActionResult> {
+  try {
+    const req = await request();
+    const decision = await authAj.protect(req);
+
+    if (decision.isDenied()) {
+      return {
+        ok: false,
+        message: "Too many attempts. Please wait a moment and try again.",
+      };
+    }
+
+    return {
+      ok: true,
+      message: "Allowed.",
+    };
+  } catch {
+    return {
+      ok: true,
+      message: "Allowed.",
+    };
+  }
+}
 
 function getProfileUsername(user: Pick<User, "email" | "user_metadata">) {
   const metadataUsername = user.user_metadata?.username;
@@ -43,6 +69,16 @@ function getProfileUsername(user: Pick<User, "email" | "user_metadata">) {
 }
 
 export async function syncProfileForUser(user: User) {
+  const supabase = await createClient();
+  const {
+    data: { user: currentUser },
+    error,
+  } = await supabase.auth.getUser();
+
+  if (error || !currentUser || currentUser.id !== user.id) {
+    throw new Error("Unable to sync profile for this session.");
+  }
+
   const now = new Date();
   const username = getProfileUsername(user);
 
@@ -73,6 +109,12 @@ export async function loginAction(
       ok: false,
       message: "Please check your email and password.",
     };
+  }
+
+  const arcjetDecision = await protectAuthAction();
+
+  if (!arcjetDecision.ok) {
+    return arcjetDecision;
   }
 
   const supabase = await createClient();
@@ -117,6 +159,12 @@ export async function signupAction(
       ok: false,
       message: "Please check the signup form.",
     };
+  }
+
+  const arcjetDecision = await protectAuthAction();
+
+  if (!arcjetDecision.ok) {
+    return arcjetDecision;
   }
 
   const supabase = await createClient();

@@ -5,7 +5,10 @@ import { eq } from "drizzle-orm";
 
 import { db } from "@/db";
 import { profiles } from "@/db/schema";
+import { profileUpdateAj } from "@/lib/arcjet";
+import { getSafeAvatarUrl } from "@/lib/avatar";
 import { createClient } from "@/lib/supabase/server";
+import { request } from "@arcjet/next";
 import {
   actionError,
   actionSuccess,
@@ -18,6 +21,26 @@ import {
   type UpdateProfileInput,
 } from "@/server/validators/profile";
 import type { CurrentChatUser } from "@/types/chat";
+
+async function protectProfileUpdateAction(userId: string) {
+  try {
+    const req = await request();
+    const decision = await profileUpdateAj.protect(req, {
+      userId,
+    });
+
+    if (decision.isDenied()) {
+      return actionError(
+        "RATE_LIMITED",
+        "You are updating your profile too fast. Please wait a moment and try again.",
+      );
+    }
+
+    return actionSuccess(undefined);
+  } catch {
+    return actionSuccess(undefined);
+  }
+}
 
 export async function getCurrentUserProfile(): Promise<
   ActionResponse<{
@@ -47,12 +70,12 @@ export async function getCurrentUserProfile(): Promise<
   }
 
   return actionSuccess({
-    profile: {
-      id: profile.id,
-      username: profile.username,
-      avatarUrl: profile.avatarUrl,
-      email: user.email ?? "",
-    },
+      profile: {
+        id: profile.id,
+        username: profile.username,
+        avatarUrl: getSafeAvatarUrl(profile.avatarUrl),
+        email: user.email ?? "",
+      },
   });
 }
 
@@ -67,6 +90,12 @@ export async function updateProfileAction(
     updateProfileSchema,
     input,
     async ({ input, user }) => {
+      const arcjetDecision = await protectProfileUpdateAction(user.id);
+
+      if (!arcjetDecision.ok) {
+        return arcjetDecision;
+      }
+
       const avatarUrl = input.avatarUrl ?? null;
       const now = new Date();
 
@@ -106,7 +135,7 @@ export async function updateProfileAction(
               id: updatedProfile.id,
               email: user.email ?? "",
               username: updatedProfile.username,
-              avatarUrl: updatedProfile.avatarUrl,
+              avatarUrl: getSafeAvatarUrl(updatedProfile.avatarUrl),
             },
           },
           "Profile updated successfully.",

@@ -10,6 +10,8 @@ type ChatErrorProps = {
 };
 
 export default function ChatError({ error, reset }: ChatErrorProps) {
+  const supportReference = error.digest ? `Reference: ${error.digest}` : null;
+
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#050816] px-4 py-10 text-white">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(168,85,247,0.16),transparent_34rem)]" />
@@ -29,9 +31,9 @@ export default function ChatError({ error, reset }: ChatErrorProps) {
           variables.
         </p>
 
-        {error.message ? (
+        {supportReference ? (
           <p className="mt-4 rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-left text-xs font-semibold text-slate-500">
-            {error.message}
+            {supportReference}
           </p>
         ) : null}
 

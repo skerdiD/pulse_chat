@@ -1,16 +1,6 @@
 import { z } from "zod";
 
-function isHttpUrl(value: string) {
-  let parsedUrl: URL;
-
-  try {
-    parsedUrl = new URL(value);
-  } catch {
-    return false;
-  }
-
-  return parsedUrl.protocol === "http:" || parsedUrl.protocol === "https:";
-}
+import { isSafeAvatarUrl } from "@/lib/avatar";
 
 export const updateProfileSchema = z.object({
   username: z
@@ -32,7 +22,7 @@ export const updateProfileSchema = z.object({
       z
         .string()
         .url("Enter a valid avatar URL.")
-        .refine(isHttpUrl, {
+        .refine(isSafeAvatarUrl, {
           message: "Avatar URL must start with http:// or https://.",
         })
         .max(500, "Avatar URL must be 500 characters or less.")

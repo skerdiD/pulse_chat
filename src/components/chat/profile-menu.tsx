@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 
 import { ProfileSettingsDialog } from "@/components/chat/profile-settings-dialog";
+import { getSafeAvatarUrl } from "@/lib/avatar";
 import { logoutAction } from "@/server/actions/auth";
 import type { CurrentChatUser } from "@/types/chat";
 
@@ -31,6 +32,7 @@ export function ProfileMenu({ currentUser, compact = false }: ProfileMenuProps) 
   const [isOpen, setIsOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const avatarUrl = getSafeAvatarUrl(currentUser.avatarUrl);
 
   useEffect(() => {
     function handlePointerDown(event: PointerEvent) {
@@ -56,12 +58,13 @@ export function ProfileMenu({ currentUser, compact = false }: ProfileMenuProps) 
 
   const avatar = (
     <div className="relative flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-purple-400 via-purple-500 to-fuchsia-600 text-xs font-black text-white shadow-lg shadow-purple-500/20">
-      {currentUser.avatarUrl ? (
+      {avatarUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={currentUser.avatarUrl}
+          src={avatarUrl}
           alt={`${currentUser.username} avatar`}
           className="size-full object-cover"
+          referrerPolicy="no-referrer"
         />
       ) : (
         getInitials(currentUser.username)

@@ -22,12 +22,38 @@ export const createRoomAj = aj.withRule(
   }),
 );
 
+export const joinRoomAj = aj.withRule(
+  fixedWindow({
+    mode: "LIVE",
+    window: "1m",
+    max: 20,
+    characteristics: ["userId"],
+  }),
+);
+
+export const profileUpdateAj = aj.withRule(
+  fixedWindow({
+    mode: "LIVE",
+    window: "1m",
+    max: 10,
+    characteristics: ["userId"],
+  }),
+);
+
 export const sendMessageAj = aj.withRule(
   fixedWindow({
     mode: "LIVE",
     window: "1m",
     max: 30,
     characteristics: ["userId"],
+  }),
+);
+
+export const authAj = aj.withRule(
+  fixedWindow({
+    mode: "LIVE",
+    window: "1m",
+    max: 10,
   }),
 );
 

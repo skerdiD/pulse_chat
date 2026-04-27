@@ -1,6 +1,13 @@
 "use client";
 
-export const QUICK_REACTION_EMOJIS = ["👍", "❤️", "😂", "🎉", "🔥", "👀"] as const;
+export const QUICK_REACTION_EMOJIS = [
+  "\u{1F44D}",
+  "\u{2764}\u{FE0F}",
+  "\u{1F602}",
+  "\u{1F389}",
+  "\u{1F525}",
+  "\u{1F440}",
+] as const;
 
 type ReactionPickerProps = {
   onSelect: (emoji: string) => void;

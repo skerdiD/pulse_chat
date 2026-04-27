@@ -5,6 +5,7 @@ import { memo } from "react";
 import { MessageActions } from "@/components/chat/message-actions";
 import { ReactionBadge } from "@/components/chat/reaction-badge";
 import { ReplyPreview } from "@/components/chat/reply-preview";
+import { getSafeAvatarUrl } from "@/lib/avatar";
 import { formatMessageTime, getInitials } from "@/lib/format";
 import type { ChatMessage } from "@/types/chat";
 
@@ -27,17 +28,19 @@ export const MessageItem = memo(function MessageItem({
 
     return a.emoji.localeCompare(b.emoji);
   });
+  const authorAvatarUrl = getSafeAvatarUrl(message.author.avatarUrl);
 
   return (
     <article className="group relative rounded-3xl px-2 py-3 transition duration-150 hover:bg-slate-900/45 sm:px-3">
       <div className="flex gap-3">
         <div className="relative mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-purple-400 via-purple-500 to-fuchsia-600 text-xs font-black text-white shadow-lg shadow-purple-500/20 sm:size-11">
-          {message.author.avatarUrl ? (
+          {authorAvatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={message.author.avatarUrl}
+              src={authorAvatarUrl}
               alt={`${message.author.username} avatar`}
               className="size-full rounded-full object-cover"
+              referrerPolicy="no-referrer"
             />
           ) : (
             getInitials(message.author.username)

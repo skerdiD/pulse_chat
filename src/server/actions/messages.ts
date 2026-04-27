@@ -12,6 +12,7 @@ import {
   roomMembers,
 } from "@/db/schema";
 import { sendMessageAj } from "@/lib/arcjet";
+import { getSafeAvatarUrl } from "@/lib/avatar";
 import {
   actionError,
   actionSuccess,
@@ -179,7 +180,7 @@ export async function getMessagesForRoom(
         author: {
           id: message.authorId,
           username: message.authorUsername,
-          avatarUrl: message.authorAvatarUrl,
+          avatarUrl: getSafeAvatarUrl(message.authorAvatarUrl),
         },
         replyToMessage: message.replyToMessageId
           ? messagePreviewById.get(message.replyToMessageId) ?? null

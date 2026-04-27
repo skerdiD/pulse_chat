@@ -6,7 +6,8 @@ import { and, count, desc, eq, inArray, or } from "drizzle-orm";
 
 import { db } from "@/db";
 import { messages, profiles, roomMembers, rooms } from "@/db/schema";
-import { createRoomAj } from "@/lib/arcjet";
+import { createRoomAj, joinRoomAj } from "@/lib/arcjet";
+import { getSafeAvatarUrl } from "@/lib/avatar";
 import {
   actionError,
   actionSuccess,
@@ -48,6 +49,26 @@ async function protectCreateRoomAction(userId: string) {
       return actionError(
         "RATE_LIMITED",
         "You are creating rooms too fast. Please wait a moment and try again.",
+      );
+    }
+
+    return actionSuccess(undefined);
+  } catch {
+    return actionSuccess(undefined);
+  }
+}
+
+async function protectJoinRoomAction(userId: string) {
+  try {
+    const req = await request();
+    const decision = await joinRoomAj.protect(req, {
+      userId,
+    });
+
+    if (decision.isDenied()) {
+      return actionError(
+        "RATE_LIMITED",
+        "You are joining rooms too fast. Please wait a moment and try again.",
       );
     }
 
@@ -126,18 +147,25 @@ export async function getRoomsForCurrentUser(): Promise<
     memberCounts.map((item) => [item.roomId, Number(item.memberCount)]),
   );
 
-  const latestMessages = await db
-    .select({
-      id: messages.id,
-      roomId: messages.roomId,
-      content: messages.content,
-      createdAt: messages.createdAt,
-      authorUsername: profiles.username,
-    })
-    .from(messages)
-    .leftJoin(profiles, eq(messages.userId, profiles.id))
-    .where(inArray(messages.roomId, roomIds))
-    .orderBy(desc(messages.createdAt));
+  const visibleMemberRoomIds = visibleRooms
+    .filter((room) => membershipByRoomId.has(room.id))
+    .map((room) => room.id);
+
+  const latestMessages =
+    visibleMemberRoomIds.length > 0
+      ? await db
+          .select({
+            id: messages.id,
+            roomId: messages.roomId,
+            content: messages.content,
+            createdAt: messages.createdAt,
+            authorUsername: profiles.username,
+          })
+          .from(messages)
+          .leftJoin(profiles, eq(messages.userId, profiles.id))
+          .where(inArray(messages.roomId, visibleMemberRoomIds))
+          .orderBy(desc(messages.createdAt))
+      : [];
 
   const latestMessageByRoomId = new Map<
     string,
@@ -237,7 +265,7 @@ export async function getRoomMembersForCurrentUserRoom(
         id: member.id,
         userId: member.userId,
         username: member.username,
-        avatarUrl: member.avatarUrl,
+        avatarUrl: getSafeAvatarUrl(member.avatarUrl),
         role: member.role,
         joinedAt: member.joinedAt.toISOString(),
       }));
@@ -330,6 +358,12 @@ export async function joinRoomAction(
     joinRoomSchema,
     input,
     async ({ input, user }) => {
+      const arcjetDecision = await protectJoinRoomAction(user.id);
+
+      if (!arcjetDecision.ok) {
+        return arcjetDecision;
+      }
+
       const [room] = await db
         .select({
           id: rooms.id,
