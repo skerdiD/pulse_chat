@@ -55,6 +55,9 @@ export const MessageItem = memo(function MessageItem({
       }),
     [message.reactions],
   );
+  const isTransientMessage = Boolean(message.sendStatus);
+  const isSending = message.sendStatus === "sending";
+  const isFailed = message.sendStatus === "failed";
 
   useEffect(() => {
     if (!isEditing) {
@@ -147,7 +150,15 @@ export const MessageItem = memo(function MessageItem({
 
   return (
     <article className="group relative rounded-3xl px-2 py-3 transition duration-150 hover:bg-slate-900/45 sm:px-3">
-      <div className="flex gap-3">
+      <div
+        className={
+          isSending
+            ? "flex gap-3 opacity-75"
+            : isFailed
+              ? "flex gap-3 opacity-85"
+              : "flex gap-3"
+        }
+      >
         <InitialAvatar
           username={message.author.username}
           avatarUrl={message.author.avatarUrl}
@@ -172,6 +183,18 @@ export const MessageItem = memo(function MessageItem({
             {message.isEdited ? (
               <span className="text-xs font-semibold text-slate-600">
                 edited
+              </span>
+            ) : null}
+
+            {isSending ? (
+              <span className="text-xs font-semibold text-slate-500">
+                sending
+              </span>
+            ) : null}
+
+            {isFailed ? (
+              <span className="text-xs font-semibold text-red-300">
+                failed
               </span>
             ) : null}
 
@@ -250,6 +273,20 @@ export const MessageItem = memo(function MessageItem({
           ) : null}
         </div>
 
+        {!isTransientMessage ? (
+          <MessageActions
+            messageId={message.id}
+            messageContent={message.content}
+            canModify={isOwnMessage}
+            onReply={onReply}
+            onEdit={startEditing}
+            onDeleted={onMessageDeleted}
+            variant="desktop"
+          />
+        ) : null}
+      </div>
+
+      {!isTransientMessage ? (
         <MessageActions
           messageId={message.id}
           messageContent={message.content}
@@ -257,19 +294,9 @@ export const MessageItem = memo(function MessageItem({
           onReply={onReply}
           onEdit={startEditing}
           onDeleted={onMessageDeleted}
-          variant="desktop"
+          variant="mobile"
         />
-      </div>
-
-      <MessageActions
-        messageId={message.id}
-        messageContent={message.content}
-        canModify={isOwnMessage}
-        onReply={onReply}
-        onEdit={startEditing}
-        onDeleted={onMessageDeleted}
-        variant="mobile"
-      />
+      ) : null}
     </article>
   );
 }, areMessageItemPropsEqual);

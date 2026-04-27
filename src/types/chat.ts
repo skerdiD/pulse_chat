@@ -62,6 +62,7 @@ export type ChatMessageReactionSummary = {
 
 export type ChatMessage = {
   id: string;
+  clientMessageId?: string;
   roomId: string;
   userId: string;
   replyToMessageId: string | null;
@@ -72,6 +73,7 @@ export type ChatMessage = {
   author: ChatMessageAuthor;
   replyToMessage: ChatMessageReplyPreview | null;
   reactions: ChatMessageReactionSummary[];
+  sendStatus?: "sending" | "failed";
 };
 
 export type RealtimeConnectionStatus =

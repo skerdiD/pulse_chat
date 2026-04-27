@@ -225,6 +225,10 @@ export async function sendMessageAction(
 ): Promise<
   ActionResponse<{
     messageId: string;
+    content: string;
+    replyToMessageId: string | null;
+    createdAt: string;
+    updatedAt: string;
   }>
 > {
   return withAuthedValidatedInput(
@@ -284,13 +288,19 @@ export async function sendMessageAction(
           })
           .returning({
             id: messages.id,
+            content: messages.content,
+            replyToMessageId: messages.replyToMessageId,
+            createdAt: messages.createdAt,
+            updatedAt: messages.updatedAt,
           });
-
-        revalidatePath("/chat");
 
         return actionSuccess(
           {
             messageId: createdMessage.id,
+            content: createdMessage.content,
+            replyToMessageId: createdMessage.replyToMessageId,
+            createdAt: createdMessage.createdAt.toISOString(),
+            updatedAt: createdMessage.updatedAt.toISOString(),
           },
           "Message sent.",
         );

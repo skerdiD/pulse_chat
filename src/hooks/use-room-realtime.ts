@@ -53,10 +53,57 @@ type TypingPayload = {
   at: string;
 };
 
+type SavedMessageResult = {
+  messageId: string;
+  content: string;
+  replyToMessageId: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
 function sortMessagesByCreatedAt(messages: ChatMessage[]) {
   return [...messages].sort(
     (a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt),
   );
+}
+
+function createTemporaryMessageId() {
+  const randomId =
+    globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2);
+
+  return `temp-${Date.now()}-${randomId}`;
+}
+
+function isOptimisticMessage(message: ChatMessage) {
+  return (
+    message.id.startsWith("temp-") ||
+    Boolean(message.clientMessageId) ||
+    Boolean(message.sendStatus)
+  );
+}
+
+function getOptimisticMatchScore(
+  optimisticMessage: ChatMessage,
+  savedMessage: ChatMessage,
+) {
+  if (!isOptimisticMessage(optimisticMessage)) {
+    return null;
+  }
+
+  if (
+    optimisticMessage.roomId !== savedMessage.roomId ||
+    optimisticMessage.userId !== savedMessage.userId ||
+    optimisticMessage.content !== savedMessage.content ||
+    optimisticMessage.replyToMessageId !== savedMessage.replyToMessageId
+  ) {
+    return null;
+  }
+
+  const diff = Math.abs(
+    Date.parse(optimisticMessage.createdAt) - Date.parse(savedMessage.createdAt),
+  );
+
+  return diff <= 60_000 ? diff : null;
 }
 
 function buildReactionSummaries(
@@ -141,6 +188,7 @@ function areReplyPreviewsEqual(
 function areMessagesEqual(current: ChatMessage, next: ChatMessage) {
   return (
     current.id === next.id &&
+    current.clientMessageId === next.clientMessageId &&
     current.roomId === next.roomId &&
     current.userId === next.userId &&
     current.replyToMessageId === next.replyToMessageId &&
@@ -151,6 +199,7 @@ function areMessagesEqual(current: ChatMessage, next: ChatMessage) {
     current.author.id === next.author.id &&
     current.author.username === next.author.username &&
     current.author.avatarUrl === next.author.avatarUrl &&
+    current.sendStatus === next.sendStatus &&
     areReplyPreviewsEqual(current.replyToMessage, next.replyToMessage) &&
     areReactionSummariesEqual(current.reactions, next.reactions)
   );
@@ -235,6 +284,27 @@ export function useRoomRealtime({
       );
 
       if (!existingMessage) {
+        const matchingOptimisticMessage = currentMessages
+          .map((currentMessage) => ({
+            message: currentMessage,
+            score: getOptimisticMatchScore(currentMessage, message),
+          }))
+          .filter(
+            (
+              candidate,
+            ): candidate is { message: ChatMessage; score: number } =>
+              candidate.score !== null,
+          )
+          .sort((a, b) => a.score - b.score)[0]?.message;
+
+        if (matchingOptimisticMessage) {
+          return currentMessages.map((currentMessage) =>
+            currentMessage.id === matchingOptimisticMessage.id
+              ? message
+              : currentMessage,
+          );
+        }
+
         return sortMessagesByCreatedAt([...currentMessages, message]);
       }
 
@@ -246,6 +316,130 @@ export function useRoomRealtime({
         currentMessage.id === message.id ? message : currentMessage,
       );
     });
+  }, []);
+
+  const addOptimisticMessage = useCallback(
+    ({
+      content,
+      replyToMessage,
+    }: {
+      content: string;
+      replyToMessage: ChatMessageReplyPreview | null;
+    }) => {
+      const now = new Date().toISOString();
+      const clientMessageId = createTemporaryMessageId();
+
+      const optimisticMessage: ChatMessage = {
+        id: clientMessageId,
+        clientMessageId,
+        roomId,
+        userId: currentUser.id,
+        replyToMessageId: replyToMessage?.id ?? null,
+        content,
+        isEdited: false,
+        createdAt: now,
+        updatedAt: now,
+        author: {
+          id: currentUser.id,
+          username: currentUser.username,
+          avatarUrl: currentUser.avatarUrl,
+        },
+        replyToMessage,
+        reactions: [],
+        sendStatus: "sending",
+      };
+
+      upsertRealtimeMessage(optimisticMessage);
+
+      return clientMessageId;
+    },
+    [
+      currentUser.avatarUrl,
+      currentUser.id,
+      currentUser.username,
+      roomId,
+      upsertRealtimeMessage,
+    ],
+  );
+
+  const confirmOptimisticMessage = useCallback(
+    (clientMessageId: string, savedMessage: SavedMessageResult) => {
+      setRealtimeMessages((currentMessages) => {
+        const optimisticMessage = currentMessages.find(
+          (message) =>
+            message.id === clientMessageId ||
+            message.clientMessageId === clientMessageId,
+        );
+
+        const existingSavedMessage = currentMessages.find(
+          (message) => message.id === savedMessage.messageId,
+        );
+
+        if (!optimisticMessage && existingSavedMessage) {
+          return currentMessages.map((message) =>
+            message.id === existingSavedMessage.id
+              ? {
+                  ...message,
+                  sendStatus: undefined,
+                  clientMessageId: undefined,
+                }
+              : message,
+          );
+        }
+
+        if (!optimisticMessage) {
+          return currentMessages;
+        }
+
+        const confirmedMessage: ChatMessage = {
+          ...optimisticMessage,
+          id: savedMessage.messageId,
+          clientMessageId: undefined,
+          content: savedMessage.content,
+          replyToMessageId: savedMessage.replyToMessageId,
+          createdAt: savedMessage.createdAt,
+          updatedAt: savedMessage.updatedAt,
+          sendStatus: undefined,
+        };
+
+        const withoutOptimisticMessage = currentMessages.filter(
+          (message) =>
+            message.id !== optimisticMessage.id &&
+            message.clientMessageId !== clientMessageId,
+        );
+
+        if (existingSavedMessage) {
+          return withoutOptimisticMessage.map((message) =>
+            message.id === existingSavedMessage.id
+              ? {
+                  ...confirmedMessage,
+                  reactions: existingSavedMessage.reactions,
+                }
+              : message,
+          );
+        }
+
+        return sortMessagesByCreatedAt([
+          ...withoutOptimisticMessage,
+          confirmedMessage,
+        ]);
+      });
+    },
+    [],
+  );
+
+  const failOptimisticMessage = useCallback((clientMessageId: string) => {
+    setRealtimeMessages((currentMessages) =>
+      currentMessages.map((message) =>
+        message.id === clientMessageId ||
+        message.clientMessageId === clientMessageId
+          ? {
+              ...message,
+              sendStatus: "failed",
+            }
+          : message,
+      ),
+    );
   }, []);
 
   const applyMessageUpdate = useCallback(
@@ -719,6 +913,9 @@ export function useRoomRealtime({
     status,
     typingUsers,
     sendTyping,
+    addOptimisticMessage,
+    confirmOptimisticMessage,
+    failOptimisticMessage,
     applyMessageUpdate,
     removeMessage,
   };

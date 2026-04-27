@@ -51,6 +51,9 @@ export function ChatRoom({
     status: realtimeStatus,
     typingUsers,
     sendTyping,
+    addOptimisticMessage,
+    confirmOptimisticMessage,
+    failOptimisticMessage,
     applyMessageUpdate,
     removeMessage,
   } = useRoomRealtime({
@@ -86,6 +89,9 @@ export function ChatRoom({
           onCancelReply={clearReply}
           onMessageSent={clearReply}
           onTyping={sendTyping}
+          onOptimisticMessage={addOptimisticMessage}
+          onMessageConfirmed={confirmOptimisticMessage}
+          onMessageFailed={failOptimisticMessage}
         />
       ) : (
         <div className="shrink-0 border-t border-slate-800/90 bg-slate-950/72 p-4 shadow-2xl shadow-black/20 backdrop-blur-xl">

@@ -1,9 +1,8 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useEffect, useRef, useTransition } from "react";
+import { useEffect, useRef } from "react";
 import { useForm, useWatch } from "react-hook-form";
-import { CornerUpLeft, Loader2, Send, X } from "lucide-react";
+import { CornerUpLeft, Send, X } from "lucide-react";
 import { toast } from "sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { z } from "zod";
@@ -22,6 +21,21 @@ type MessageComposerProps = {
   onCancelReply: () => void;
   onMessageSent: () => void;
   onTyping?: () => void;
+  onOptimisticMessage: (message: {
+    content: string;
+    replyToMessage: ChatMessageReplyPreview | null;
+  }) => string;
+  onMessageConfirmed: (
+    clientMessageId: string,
+    message: {
+      messageId: string;
+      content: string;
+      replyToMessageId: string | null;
+      createdAt: string;
+      updatedAt: string;
+    },
+  ) => void;
+  onMessageFailed: (clientMessageId: string) => void;
 };
 
 export function MessageComposer({
@@ -30,11 +44,12 @@ export function MessageComposer({
   onCancelReply,
   onMessageSent,
   onTyping,
+  onOptimisticMessage,
+  onMessageConfirmed,
+  onMessageFailed,
 }: MessageComposerProps) {
-  const router = useRouter();
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const lastTypingSentAtRef = useRef(0);
-  const [isPending, startTransition] = useTransition();
 
   const form = useForm<
     z.input<typeof sendMessageSchema>,
@@ -97,14 +112,36 @@ export function MessageComposer({
   function onSubmit(values: SendMessageInput) {
     form.clearErrors("root");
 
-    startTransition(async () => {
+    const optimisticReply = replyToMessage;
+    const clientMessageId = onOptimisticMessage({
+      content: values.content,
+      replyToMessage: optimisticReply,
+    });
+
+    lastTypingSentAtRef.current = 0;
+
+    form.reset({
+      roomId,
+      content: "",
+      replyToMessageId: undefined,
+    });
+
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.focus();
+    }
+
+    onMessageSent();
+
+    void (async () => {
       const result = await sendMessageAction({
         roomId,
         content: values.content,
-        replyToMessageId: replyToMessage?.id,
+        replyToMessageId: optimisticReply?.id,
       });
 
       if (!result.ok) {
+        onMessageFailed(clientMessageId);
         form.setError("root", {
           type: "server",
           message: result.error.message,
@@ -113,21 +150,8 @@ export function MessageComposer({
         return;
       }
 
-      lastTypingSentAtRef.current = 0;
-
-      form.reset({
-        roomId,
-        content: "",
-        replyToMessageId: undefined,
-      });
-
-      if (textareaRef.current) {
-        textareaRef.current.style.height = "auto";
-      }
-
-      onMessageSent();
-      router.refresh();
-    });
+      onMessageConfirmed(clientMessageId, result.data);
+    })();
   }
 
   function handleKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -197,15 +221,11 @@ export function MessageComposer({
 
               <button
                 type="submit"
-                disabled={isPending || !content?.trim()}
+                disabled={!content?.trim()}
                 className="mb-1 flex size-10 shrink-0 items-center justify-center rounded-2xl bg-purple-500 text-white shadow-lg shadow-purple-500/25 transition hover:bg-purple-400 disabled:pointer-events-none disabled:opacity-50"
                 aria-label="Send message"
               >
-                {isPending ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <Send className="size-4" />
-                )}
+                <Send className="size-4" />
               </button>
             </div>
 
