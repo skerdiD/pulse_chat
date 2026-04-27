@@ -8,6 +8,7 @@ import { db } from "@/db";
 import { messages, profiles, roomMembers, rooms } from "@/db/schema";
 import { createRoomAj, joinRoomAj } from "@/lib/arcjet";
 import { getSafeAvatarUrl } from "@/lib/avatar";
+import { formatRoomPreviewTime } from "@/lib/format";
 import {
   actionError,
   actionSuccess,
@@ -188,6 +189,8 @@ export async function getRoomsForCurrentUser(): Promise<
     }
   }
 
+  const renderedAt = new Date();
+
   const serializedRooms: ChatRoom[] = visibleRooms.map((room) => {
     const latestMessage = latestMessageByRoomId.get(room.id) ?? null;
     const currentUserRole = membershipByRoomId.get(room.id) ?? null;
@@ -210,6 +213,10 @@ export async function getRoomsForCurrentUser(): Promise<
             id: latestMessage.id,
             content: latestMessage.content,
             createdAt: latestMessage.createdAt.toISOString(),
+            timeLabel: formatRoomPreviewTime(
+              latestMessage.createdAt.toISOString(),
+              renderedAt,
+            ),
             authorUsername: latestMessage.authorUsername ?? "Unknown user",
           }
         : null,

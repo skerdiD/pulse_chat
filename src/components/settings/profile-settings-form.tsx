@@ -78,7 +78,7 @@ export function ProfileSettingsForm({ currentUser }: ProfileSettingsFormProps) {
   return (
     <form
       onSubmit={form.handleSubmit(onSubmit)}
-      className="overflow-hidden rounded-[2rem] border border-slate-800 bg-slate-950/82 shadow-2xl shadow-black/30 backdrop-blur-xl"
+      className="overflow-hidden rounded-[1.75rem] border border-slate-800 bg-slate-950/82 shadow-2xl shadow-black/25 backdrop-blur-xl"
     >
       <div className="border-b border-slate-800/90 p-5 sm:p-6">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
@@ -91,16 +91,16 @@ export function ProfileSettingsForm({ currentUser }: ProfileSettingsFormProps) {
             />
 
             <div className="min-w-0">
-              <p className="truncate text-xl font-black tracking-[-0.04em] text-white">
+              <p className="truncate text-lg font-semibold tracking-[-0.03em] text-white sm:text-xl">
                 {username || currentUser.username}
               </p>
-              <p className="mt-1 truncate text-sm font-semibold text-slate-500">
+              <p className="mt-1 truncate text-sm font-medium text-slate-500">
                 {currentUser.email}
               </p>
             </div>
           </div>
 
-          <div className="inline-flex w-fit items-center gap-2 rounded-full border border-purple-400/20 bg-purple-500/10 px-3 py-1.5 text-xs font-black text-purple-200">
+          <div className="inline-flex w-fit items-center gap-2 rounded-full border border-purple-400/15 bg-slate-900/80 px-3 py-1.5 text-[11px] font-semibold text-purple-200">
             <UserRound className="size-3.5" />
             Profile
           </div>
@@ -111,7 +111,7 @@ export function ProfileSettingsForm({ currentUser }: ProfileSettingsFormProps) {
         <div>
           <label
             htmlFor="username"
-            className="text-xs font-black uppercase tracking-[0.18em] text-slate-500"
+            className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500"
           >
             Username
           </label>
@@ -121,7 +121,7 @@ export function ProfileSettingsForm({ currentUser }: ProfileSettingsFormProps) {
             type="text"
             disabled={isPending}
             {...form.register("username")}
-            className="mt-2 h-12 w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 text-sm font-semibold text-white outline-none transition placeholder:text-slate-600 focus:border-purple-400/50 focus:ring-4 focus:ring-purple-500/10 disabled:cursor-not-allowed disabled:opacity-60"
+            className="mt-2 h-11 w-full rounded-xl border border-slate-800 bg-slate-950 px-4 text-sm font-medium text-white outline-none transition placeholder:text-slate-600 focus:border-purple-400/40 focus:ring-4 focus:ring-purple-500/10 disabled:cursor-not-allowed disabled:opacity-60"
             placeholder="Your username"
           />
 
@@ -135,7 +135,7 @@ export function ProfileSettingsForm({ currentUser }: ProfileSettingsFormProps) {
         <div>
           <label
             htmlFor="avatarUrl"
-            className="text-xs font-black uppercase tracking-[0.18em] text-slate-500"
+            className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500"
           >
             Avatar URL
           </label>
@@ -145,11 +145,11 @@ export function ProfileSettingsForm({ currentUser }: ProfileSettingsFormProps) {
             type="url"
             disabled={isPending}
             {...form.register("avatarUrl")}
-            className="mt-2 h-12 w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 text-sm font-semibold text-white outline-none transition placeholder:text-slate-600 focus:border-purple-400/50 focus:ring-4 focus:ring-purple-500/10 disabled:cursor-not-allowed disabled:opacity-60"
+            className="mt-2 h-11 w-full rounded-xl border border-slate-800 bg-slate-950 px-4 text-sm font-medium text-white outline-none transition placeholder:text-slate-600 focus:border-purple-400/40 focus:ring-4 focus:ring-purple-500/10 disabled:cursor-not-allowed disabled:opacity-60"
             placeholder="https://example.com/avatar.png"
           />
 
-          <p className="mt-2 text-xs font-semibold leading-5 text-slate-500">
+          <p className="mt-2 text-xs font-medium leading-5 text-slate-500">
             Optional. Use a safe http:// or https:// image URL.
           </p>
 
@@ -163,7 +163,7 @@ export function ProfileSettingsForm({ currentUser }: ProfileSettingsFormProps) {
         <div>
           <label
             htmlFor="email"
-            className="text-xs font-black uppercase tracking-[0.18em] text-slate-500"
+            className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500"
           >
             Email
           </label>
@@ -173,10 +173,10 @@ export function ProfileSettingsForm({ currentUser }: ProfileSettingsFormProps) {
             type="email"
             value={currentUser.email}
             readOnly
-            className="mt-2 h-12 w-full cursor-not-allowed rounded-2xl border border-slate-800 bg-slate-900/45 px-4 text-sm font-semibold text-slate-400 outline-none"
+            className="mt-2 h-11 w-full cursor-not-allowed rounded-xl border border-slate-800 bg-slate-900/45 px-4 text-sm font-medium text-slate-400 outline-none"
           />
 
-          <p className="mt-2 text-xs font-semibold leading-5 text-slate-500">
+          <p className="mt-2 text-xs font-medium leading-5 text-slate-500">
             Email is managed by your authentication provider.
           </p>
         </div>
@@ -187,15 +187,15 @@ export function ProfileSettingsForm({ currentUser }: ProfileSettingsFormProps) {
           </div>
         ) : null}
 
-        <div className="flex flex-col gap-3 border-t border-slate-800/80 pt-5 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs font-semibold leading-5 text-slate-500">
+        <div className="flex flex-col gap-3 border-t border-slate-800/80 pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs font-medium leading-5 text-slate-500">
             Changes will update how your profile appears in rooms and messages.
           </p>
 
           <button
             type="submit"
             disabled={isPending}
-            className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-purple-500 to-fuchsia-600 px-5 text-sm font-black text-white shadow-lg shadow-purple-500/20 transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-purple-500 px-5 text-sm font-semibold text-white shadow-md shadow-purple-500/20 transition hover:bg-purple-400 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isPending ? (
               <>

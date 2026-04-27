@@ -40,8 +40,8 @@ function TypingIndicator({ users }: { users: TypingUser[] }) {
   }
 
   return (
-    <div className="px-3 py-2">
-      <div className="inline-flex items-center gap-2 rounded-full border border-slate-800 bg-slate-950/85 px-3 py-2 text-xs font-bold text-slate-400 shadow-xl shadow-black/20">
+    <div className="px-2 py-1.5">
+      <div className="inline-flex items-center gap-2 rounded-full border border-slate-800 bg-slate-950/85 px-2.5 py-1.5 text-[11px] font-medium text-slate-400 shadow-lg shadow-black/15">
         <span>{getTypingText(users)}</span>
         <span className="flex items-center gap-1">
           <span className="size-1.5 animate-bounce rounded-full bg-purple-300 [animation-delay:-0.2s]" />
@@ -103,13 +103,13 @@ export function MessageList({
 
   if (isLoading) {
     return (
-      <div className="flex min-h-0 flex-1 items-center justify-center px-4 py-10">
-        <div className="rounded-[2rem] border border-slate-800/90 bg-slate-950/70 p-8 text-center shadow-2xl shadow-black/30 backdrop-blur-xl">
-          <div className="mx-auto mb-5 flex size-14 items-center justify-center rounded-2xl border border-purple-400/20 bg-purple-500/10 text-purple-200">
+      <div className="flex min-h-0 flex-1 items-center justify-center px-4 py-8">
+        <div className="rounded-[1.75rem] border border-slate-800/90 bg-slate-950/72 p-7 text-center shadow-2xl shadow-black/25 backdrop-blur-xl">
+          <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-2xl border border-purple-400/15 bg-purple-500/10 text-purple-200">
             <Loader2 className="size-6 animate-spin" />
           </div>
 
-          <h2 className="text-xl font-black tracking-[-0.03em]">
+          <h2 className="text-lg font-semibold tracking-[-0.02em] text-white">
             Loading messages
           </h2>
 
@@ -123,21 +123,21 @@ export function MessageList({
 
   if (messages.length === 0) {
     return (
-      <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden px-4 py-10 sm:px-6">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(168,85,247,0.12),transparent_34rem)]" />
+      <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden px-4 py-8 sm:px-6">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(168,85,247,0.1),transparent_34rem)]" />
 
-        <div className="relative w-full max-w-xl rounded-[2rem] border border-slate-800/90 bg-slate-950/70 p-8 text-center shadow-2xl shadow-black/30 backdrop-blur-xl">
-          <div className="mx-auto mb-6 flex size-16 items-center justify-center rounded-3xl border border-purple-400/20 bg-purple-500/10 text-purple-200 shadow-xl shadow-purple-500/10">
-            <MessageSquareText className="size-7" />
+        <div className="relative w-full max-w-lg rounded-[1.75rem] border border-slate-800/90 bg-slate-950/72 p-7 text-center shadow-2xl shadow-black/25 backdrop-blur-xl">
+          <div className="mx-auto mb-5 flex size-14 items-center justify-center rounded-3xl border border-purple-400/15 bg-purple-500/10 text-purple-200 shadow-lg shadow-purple-500/5">
+            <MessageSquareText className="size-6" />
           </div>
 
-          <h2 className="text-3xl font-black tracking-[-0.04em] text-white">
+          <h2 className="text-2xl font-semibold tracking-[-0.03em] text-white">
             Start the conversation.
           </h2>
 
-          <p className="mt-4 text-sm leading-6 text-slate-400 sm:text-base">
+          <p className="mt-3 text-sm leading-6 text-slate-400 sm:text-base">
             No messages in{" "}
-            <span className="font-bold text-slate-200">{roomName}</span> yet.
+            <span className="font-semibold text-slate-200">{roomName}</span> yet.
             Send the first message and make this room feel alive.
           </p>
 
@@ -152,18 +152,18 @@ export function MessageList({
       <div
         ref={containerRef}
         onScroll={handleScroll}
-        className="pulse-scrollbar h-full overflow-y-auto px-3 py-5 sm:px-5 lg:px-6"
+        className="pulse-scrollbar h-full overflow-y-auto px-3 py-4 sm:px-4 lg:px-5"
       >
-        <div className="mx-auto flex w-full max-w-5xl flex-col gap-1">
+        <div className="mx-auto flex w-full max-w-5xl flex-col gap-0.5">
           {groupedMessages.map((group) => (
             <section key={group.label} aria-label={group.label}>
-              <div className="sticky top-2 z-10 my-4 flex justify-center">
-                <span className="rounded-full border border-slate-800 bg-slate-950/85 px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-slate-500 shadow-xl shadow-black/20 backdrop-blur-xl">
+              <div className="sticky top-2 z-10 my-3 flex justify-center">
+                <span className="rounded-full border border-slate-800 bg-slate-950/85 px-3 py-1 text-[10px] font-medium uppercase tracking-[0.12em] text-slate-500 shadow-lg shadow-black/15 backdrop-blur-xl">
                   {group.label}
                 </span>
               </div>
 
-              <div className="space-y-1">
+              <div className="space-y-0.5">
                 {group.messages.map((message) => (
                   <MessageItem
                     key={message.id}
@@ -190,7 +190,7 @@ export function MessageList({
           <button
             type="button"
             onClick={() => scrollToBottom("smooth")}
-            className="pointer-events-auto rounded-full border border-purple-400/30 bg-purple-500 px-4 py-2 text-xs font-black text-white shadow-2xl shadow-purple-500/30 transition hover:-translate-y-0.5 hover:bg-purple-400"
+            className="pointer-events-auto rounded-full border border-purple-400/20 bg-slate-900/95 px-3.5 py-1.5 text-[11px] font-semibold text-purple-100 shadow-xl shadow-black/25 ring-1 ring-purple-400/20 transition hover:-translate-y-0.5 hover:bg-slate-900"
           >
             {newItemsCount === 1
               ? "1 new message"

@@ -170,12 +170,12 @@ export function MessageComposer({
   }
 
   return (
-    <div className="shrink-0 border-t border-slate-800/90 bg-slate-950/72 p-3 shadow-2xl shadow-black/20 backdrop-blur-xl sm:p-4">
+    <div className="shrink-0 border-t border-slate-800/90 bg-slate-950/78 p-2.5 shadow-xl shadow-black/15 backdrop-blur-xl sm:p-3">
       <div className="mx-auto w-full max-w-5xl">
         {replyToMessage ? (
-          <div className="mb-3 rounded-2xl border border-purple-400/20 bg-purple-500/10 p-3 shadow-lg shadow-purple-500/5">
+          <div className="mb-2.5 rounded-xl border border-slate-800 bg-slate-900/70 p-3 shadow-md shadow-black/10">
             <div className="mb-2 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-purple-200">
+              <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-purple-200">
                 <CornerUpLeft className="size-3.5" />
                 Replying
               </div>
@@ -183,7 +183,7 @@ export function MessageComposer({
               <button
                 type="button"
                 onClick={onCancelReply}
-                className="flex size-7 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-900 hover:text-white"
+                className="flex size-7 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-950 hover:text-white"
                 aria-label="Cancel reply"
               >
                 <X className="size-4" />
@@ -199,8 +199,8 @@ export function MessageComposer({
         ) : null}
 
         <form onSubmit={handleFormSubmit}>
-          <div className="rounded-[1.5rem] border border-slate-800 bg-slate-950 shadow-2xl shadow-black/20 transition focus-within:border-purple-400/40 focus-within:ring-4 focus-within:ring-purple-500/10">
-            <div className="flex items-end gap-2 p-2">
+          <div className="rounded-[1.25rem] border border-slate-800 bg-slate-950/95 shadow-xl shadow-black/15 transition focus-within:border-purple-400/35 focus-within:ring-4 focus-within:ring-purple-500/10">
+            <div className="flex items-end gap-1.5 p-1.5">
               <textarea
                 ref={(node) => {
                   contentField.ref(node);
@@ -216,33 +216,33 @@ export function MessageComposer({
                 placeholder="Type a message..."
                 aria-invalid={Boolean(form.formState.errors.content)}
                 onKeyDown={handleKeyDown}
-                className="pulse-scrollbar max-h-40 min-h-11 flex-1 resize-none rounded-2xl bg-transparent px-3 py-3 text-sm font-medium leading-6 text-white outline-none placeholder:text-slate-600 focus-visible:outline-none"
+                className="pulse-scrollbar max-h-36 min-h-10 flex-1 resize-none rounded-xl bg-transparent px-3 py-2.5 text-sm leading-5 text-white outline-none placeholder:text-slate-600 focus-visible:outline-none"
               />
 
               <button
                 type="submit"
                 disabled={!content?.trim()}
-                className="mb-1 flex size-10 shrink-0 items-center justify-center rounded-2xl bg-purple-500 text-white shadow-lg shadow-purple-500/25 transition hover:bg-purple-400 disabled:pointer-events-none disabled:opacity-50"
+                className="mb-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl bg-purple-500 text-white shadow-md shadow-purple-500/20 transition hover:bg-purple-400 disabled:pointer-events-none disabled:opacity-50"
                 aria-label="Send message"
               >
-                <Send className="size-4" />
+                <Send className="size-3.5" />
               </button>
             </div>
 
             {form.formState.errors.content?.message ? (
-              <p className="border-t border-slate-800 px-4 py-2 text-sm font-medium text-red-300">
+              <p className="border-t border-slate-800 px-3.5 py-2 text-sm font-medium text-red-300">
                 {form.formState.errors.content.message}
               </p>
             ) : null}
 
             {form.formState.errors.root?.message ? (
-              <p className="border-t border-slate-800 px-4 py-2 text-sm font-medium text-red-300">
+              <p className="border-t border-slate-800 px-3.5 py-2 text-sm font-medium text-red-300">
                 {form.formState.errors.root.message}
               </p>
             ) : null}
           </div>
 
-          <p className="mt-2 px-2 text-xs font-medium text-slate-600">
+          <p className="mt-1.5 px-1 text-[11px] font-medium text-slate-600">
             Press Enter to send, Shift + Enter for a new line. Press Escape to
             cancel a reply.
           </p>

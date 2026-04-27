@@ -101,9 +101,10 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
   background:
-    radial-gradient(circle at top left, rgba(168, 85, 247, 0.2), transparent 34rem),
-    radial-gradient(circle at top right, rgba(14, 165, 233, 0.12), transparent 34rem),
-    linear-gradient(180deg, #050816 0%, #070b18 45%, #050816 100%);
+    radial-gradient(circle at top left, rgba(168, 85, 247, 0.14), transparent 30rem),
+    radial-gradient(circle at top right, rgba(14, 165, 233, 0.08), transparent 32rem),
+    radial-gradient(circle at bottom center, rgba(15, 23, 42, 0.52), transparent 38rem),
+    linear-gradient(180deg, #050816 0%, #060b16 46%, #050816 100%);
   color: var(--foreground);
   font-feature-settings:
     "rlig" 1,
@@ -113,7 +114,7 @@ body {
 }
 
 ::selection {
-  background: rgba(168, 85, 247, 0.35);
+  background: rgba(168, 85, 247, 0.28);
   color: #ffffff;
 }
 
@@ -151,21 +152,21 @@ button:disabled {
 }
 
 .pulse-card {
-  border: 1px solid rgba(148, 163, 184, 0.14);
+  border: 1px solid rgba(148, 163, 184, 0.12);
   background:
-    linear-gradient(180deg, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.58)),
-    rgba(15, 23, 42, 0.72);
+    linear-gradient(180deg, rgba(15, 23, 42, 0.88), rgba(15, 23, 42, 0.62)),
+    rgba(15, 23, 42, 0.78);
   box-shadow:
-    0 24px 80px rgba(0, 0, 0, 0.36),
-    inset 0 1px 0 rgba(255, 255, 255, 0.045);
+    0 20px 64px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
   backdrop-filter: blur(18px);
 }
 
 .pulse-soft-card {
   border: 1px solid rgba(148, 163, 184, 0.12);
-  background: rgba(15, 23, 42, 0.54);
+  background: rgba(15, 23, 42, 0.58);
   box-shadow:
-    0 18px 60px rgba(0, 0, 0, 0.2),
+    0 14px 48px rgba(0, 0, 0, 0.18),
     inset 0 1px 0 rgba(255, 255, 255, 0.035);
 }
 
@@ -178,18 +179,18 @@ button:disabled {
 
 .pulse-primary-button {
   display: inline-flex;
-  min-height: 2.75rem;
+  min-height: 2.625rem;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
   border-radius: 9999px;
-  padding: 0.75rem 1.25rem;
+  padding: 0.6875rem 1.125rem;
   background: linear-gradient(135deg, #a855f7, #7c3aed);
   color: #ffffff;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: -0.01em;
   box-shadow:
-    0 14px 40px rgba(168, 85, 247, 0.32),
+    0 12px 32px rgba(168, 85, 247, 0.24),
     inset 0 1px 0 rgba(255, 255, 255, 0.22);
   transition:
     transform 180ms ease,
@@ -200,22 +201,22 @@ button:disabled {
 .pulse-primary-button:hover {
   transform: translateY(-1px);
   box-shadow:
-    0 18px 48px rgba(168, 85, 247, 0.42),
+    0 16px 40px rgba(168, 85, 247, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.24);
 }
 
 .pulse-secondary-button {
   display: inline-flex;
-  min-height: 2.75rem;
+  min-height: 2.625rem;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
   border: 1px solid rgba(148, 163, 184, 0.2);
   border-radius: 9999px;
-  padding: 0.75rem 1.25rem;
+  padding: 0.6875rem 1.125rem;
   background: rgba(15, 23, 42, 0.58);
   color: #e2e8f0;
-  font-weight: 800;
+  font-weight: 600;
   letter-spacing: -0.01em;
   transition:
     transform 180ms ease,

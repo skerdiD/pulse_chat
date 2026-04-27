@@ -66,8 +66,8 @@ export function ProfileMenu({ currentUser, compact = false }: ProfileMenuProps) 
         onClick={() => setIsOpen((current) => !current)}
         className={
           compact
-            ? "flex size-10 items-center justify-center rounded-xl border border-slate-800 bg-slate-950/70 transition hover:border-purple-400/30"
-            : "flex w-full items-center gap-3 rounded-2xl border border-slate-800 bg-slate-950/80 p-3 text-left transition hover:border-purple-400/30 hover:bg-slate-900/70"
+            ? "flex size-9 items-center justify-center rounded-lg border border-slate-800 bg-slate-950/70 transition hover:border-purple-400/25"
+            : "flex w-full items-center gap-3 rounded-xl border border-slate-800 bg-slate-950/80 p-2.5 text-left transition hover:border-purple-400/25 hover:bg-slate-900/70"
         }
         aria-haspopup="menu"
         aria-expanded={isOpen}
@@ -77,10 +77,10 @@ export function ProfileMenu({ currentUser, compact = false }: ProfileMenuProps) 
         {!compact ? (
           <>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-black text-white">
+              <p className="truncate text-sm font-medium text-white">
                 {currentUser.username}
               </p>
-              <p className="mt-1 truncate text-xs font-semibold text-slate-500">
+              <p className="mt-1 truncate text-xs font-medium text-slate-500">
                 {currentUser.email}
               </p>
             </div>
@@ -95,25 +95,25 @@ export function ProfileMenu({ currentUser, compact = false }: ProfileMenuProps) 
           role="menu"
           className={
             compact
-              ? "absolute right-0 top-12 z-40 w-72 overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 p-2 shadow-2xl shadow-black/50"
-              : "absolute bottom-[calc(100%+0.75rem)] left-0 z-40 w-full overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 p-2 shadow-2xl shadow-black/50"
+              ? "absolute right-0 top-11 z-40 w-72 overflow-hidden rounded-xl border border-slate-800 bg-slate-950 p-2 shadow-2xl shadow-black/50"
+              : "absolute bottom-[calc(100%+0.75rem)] left-0 z-40 w-full overflow-hidden rounded-xl border border-slate-800 bg-slate-950 p-2 shadow-2xl shadow-black/50"
           }
         >
-          <div className="mb-2 rounded-2xl border border-slate-800 bg-slate-900/60 p-3">
+          <div className="mb-1.5 rounded-xl border border-slate-800 bg-slate-900/70 p-3">
             <div className="flex items-center gap-3">
               {avatar}
 
               <div className="min-w-0">
-                <p className="truncate text-sm font-black text-white">
+                <p className="truncate text-sm font-medium text-white">
                   {currentUser.username}
                 </p>
-                <p className="mt-1 truncate text-xs font-semibold text-slate-500">
+                <p className="mt-1 truncate text-xs font-medium text-slate-500">
                   {currentUser.email}
                 </p>
               </div>
             </div>
 
-            <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1.5 text-xs font-black text-emerald-200">
+            <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1.5 text-xs font-medium text-emerald-200">
               <ShieldCheck className="size-3.5" />
               Signed in
             </div>
@@ -123,7 +123,7 @@ export function ProfileMenu({ currentUser, compact = false }: ProfileMenuProps) 
             href="/settings"
             role="menuitem"
             onClick={() => setIsOpen(false)}
-            className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-bold text-slate-300 transition hover:bg-slate-900 hover:text-white"
+            className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-slate-300 transition hover:bg-slate-900 hover:text-white"
           >
             <Settings className="size-4" />
             Profile settings
@@ -133,7 +133,7 @@ export function ProfileMenu({ currentUser, compact = false }: ProfileMenuProps) 
             href="/settings"
             role="menuitem"
             onClick={() => setIsOpen(false)}
-            className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-bold text-slate-300 transition hover:bg-slate-900 hover:text-white"
+            className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-slate-300 transition hover:bg-slate-900 hover:text-white"
           >
             <UserRound className="size-4" />
             Edit username/avatar
@@ -145,7 +145,7 @@ export function ProfileMenu({ currentUser, compact = false }: ProfileMenuProps) 
             <button
               type="submit"
               role="menuitem"
-              className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-bold text-red-300 transition hover:bg-red-500/10 hover:text-red-200"
+              className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-red-300 transition hover:bg-red-500/10 hover:text-red-200"
             >
               <LogOut className="size-4" />
               Log out

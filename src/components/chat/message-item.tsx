@@ -149,14 +149,14 @@ export const MessageItem = memo(function MessageItem({
   }
 
   return (
-    <article className="group relative rounded-3xl px-2 py-3 transition duration-150 hover:bg-slate-900/45 sm:px-3">
+    <article className="group relative rounded-2xl px-2 py-2 transition duration-150 hover:bg-slate-900/40 sm:px-2.5">
       <div
         className={
           isSending
-            ? "flex gap-3 opacity-75"
+            ? "flex gap-2.5 opacity-75"
             : isFailed
-              ? "flex gap-3 opacity-85"
-              : "flex gap-3"
+              ? "flex gap-2.5 opacity-85"
+              : "flex gap-2.5"
         }
       >
         <InitialAvatar
@@ -164,49 +164,49 @@ export const MessageItem = memo(function MessageItem({
           avatarUrl={message.author.avatarUrl}
           size="md"
           showStatus
-          className="mt-0.5 size-10 sm:size-11"
+          className="mt-0.5 size-9 sm:size-10"
         />
 
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <h3 className="text-sm font-black tracking-[-0.01em] text-white">
+            <h3 className="text-sm font-medium tracking-[-0.01em] text-white">
               {message.author.username}
             </h3>
 
             <time
               dateTime={message.createdAt}
-              className="text-xs font-semibold text-slate-500"
+              className="text-[11px] font-medium text-slate-500"
             >
               {formatMessageTime(message.createdAt)}
             </time>
 
             {message.isEdited ? (
-              <span className="text-xs font-semibold text-slate-600">
+              <span className="text-[11px] font-medium text-slate-600">
                 edited
               </span>
             ) : null}
 
             {isSending ? (
-              <span className="text-xs font-semibold text-slate-500">
+              <span className="text-[11px] font-medium text-slate-500">
                 sending
               </span>
             ) : null}
 
             {isFailed ? (
-              <span className="text-xs font-semibold text-red-300">
+              <span className="text-[11px] font-medium text-red-300">
                 failed
               </span>
             ) : null}
 
             {isOwnMessage ? (
-              <span className="rounded-full border border-purple-400/20 bg-purple-500/10 px-2 py-0.5 text-[11px] font-black text-purple-200">
+              <span className="rounded-full border border-purple-400/20 bg-slate-900/80 px-2 py-0.5 text-[10px] font-medium text-purple-100">
                 You
               </span>
             ) : null}
           </div>
 
           {message.replyToMessage ? (
-            <div className="mt-2 max-w-2xl">
+            <div className="mt-1.5 max-w-2xl">
               <ReplyPreview
                 authorName={message.replyToMessage.authorUsername}
                 content={message.replyToMessage.content}
@@ -216,7 +216,7 @@ export const MessageItem = memo(function MessageItem({
           ) : null}
 
           {isEditing ? (
-            <div className="mt-2 max-w-3xl rounded-2xl border border-purple-400/30 bg-slate-950 p-2 shadow-xl shadow-black/20">
+            <div className="mt-1.5 max-w-3xl rounded-xl border border-slate-800/90 bg-slate-950/95 p-1.5 shadow-lg shadow-black/20">
               <textarea
                 ref={editTextareaRef}
                 value={editContent}
@@ -225,15 +225,15 @@ export const MessageItem = memo(function MessageItem({
                 rows={1}
                 disabled={isPending}
                 aria-label="Edit message"
-                className="pulse-scrollbar max-h-44 min-h-20 w-full resize-none bg-transparent px-2 py-2 text-sm font-medium leading-6 text-white outline-none placeholder:text-slate-600 disabled:opacity-60"
+                className="pulse-scrollbar max-h-44 min-h-16 w-full resize-none bg-transparent px-2 py-2 text-sm leading-5 text-white outline-none placeholder:text-slate-600 disabled:opacity-60"
               />
 
-              <div className="mt-2 flex flex-wrap justify-end gap-2">
+              <div className="mt-1.5 flex flex-wrap justify-end gap-2">
                 <button
                   type="button"
                   onClick={cancelEditing}
                   disabled={isPending}
-                  className="inline-flex h-9 items-center gap-2 rounded-full border border-slate-800 px-3 text-xs font-black text-slate-300 transition hover:border-slate-700 hover:text-white disabled:pointer-events-none disabled:opacity-60"
+                  className="inline-flex h-8 items-center gap-2 rounded-full border border-slate-800 px-3 text-xs font-medium text-slate-300 transition hover:border-slate-700 hover:text-white disabled:pointer-events-none disabled:opacity-60"
                 >
                   <X className="size-3.5" />
                   Cancel
@@ -243,7 +243,7 @@ export const MessageItem = memo(function MessageItem({
                   type="button"
                   onClick={saveEdit}
                   disabled={isPending || !editContent.trim()}
-                  className="inline-flex h-9 items-center gap-2 rounded-full bg-purple-500 px-3 text-xs font-black text-white shadow-lg shadow-purple-500/20 transition hover:bg-purple-400 disabled:pointer-events-none disabled:opacity-50"
+                  className="inline-flex h-8 items-center gap-2 rounded-full bg-purple-500 px-3 text-xs font-semibold text-white shadow-md shadow-purple-500/20 transition hover:bg-purple-400 disabled:pointer-events-none disabled:opacity-50"
                 >
                   {isPending ? (
                     <Loader2 className="size-3.5 animate-spin" />
@@ -255,13 +255,13 @@ export const MessageItem = memo(function MessageItem({
               </div>
             </div>
           ) : (
-            <p className="mt-1 whitespace-pre-wrap break-words text-sm leading-6 text-slate-100">
+            <p className="mt-1 whitespace-pre-wrap break-words text-sm leading-6 text-slate-100/95">
               {message.content}
             </p>
           )}
 
           {reactions.length > 0 ? (
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div className="mt-2 flex flex-wrap gap-1.5">
               {reactions.map((reaction) => (
                 <ReactionBadge
                   key={reaction.emoji}

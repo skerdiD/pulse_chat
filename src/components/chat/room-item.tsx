@@ -14,7 +14,6 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import { formatRoomPreviewTime } from "@/lib/format";
 import { joinRoomAction } from "@/server/actions/rooms";
 import type { ChatRoom } from "@/types/chat";
 
@@ -46,34 +45,34 @@ export function RoomItem({ room, isActive, onNavigate }: RoomItemProps) {
     });
   }
 
-  const latestTime = formatRoomPreviewTime(room.latestMessagePreview?.createdAt);
+  const latestTime = room.latestMessagePreview?.timeLabel ?? "";
 
   const content = (
     <div
       className={
         isActive
-          ? "w-full rounded-2xl border border-purple-400/40 bg-gradient-to-br from-purple-500/22 to-fuchsia-500/10 p-3 text-left shadow-lg shadow-purple-500/10"
-          : "w-full rounded-2xl border border-transparent p-3 text-left transition hover:border-slate-700/80 hover:bg-slate-900/70"
+          ? "w-full rounded-xl border border-slate-700/80 bg-slate-900/85 p-2.5 text-left shadow-lg shadow-black/20 ring-1 ring-inset ring-purple-400/20"
+          : "w-full rounded-xl border border-transparent p-2.5 text-left transition hover:border-slate-700/80 hover:bg-slate-900/65"
       }
     >
-      <div className="flex gap-3">
+      <div className="flex gap-2.5">
         <div
           className={
             isActive
-              ? "flex size-11 shrink-0 items-center justify-center rounded-xl bg-purple-500 text-white shadow-lg shadow-purple-500/20"
-              : "flex size-11 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-slate-300"
+              ? "flex size-10 shrink-0 items-center justify-center rounded-lg border border-purple-400/20 bg-slate-800 text-purple-100 shadow-sm shadow-black/20"
+              : "flex size-10 shrink-0 items-center justify-center rounded-lg border border-slate-800 bg-slate-900/70 text-slate-300"
           }
         >
           {room.visibility === "private" ? (
-            <LockKeyhole className="size-5" />
+            <LockKeyhole className="size-4" />
           ) : (
-            <Hash className="size-5" />
+            <Hash className="size-4" />
           )}
         </div>
 
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 items-center gap-2">
-            <p className="truncate text-sm font-black text-white">
+            <p className="truncate text-sm font-medium text-white">
               {room.name}
             </p>
 
@@ -84,20 +83,20 @@ export function RoomItem({ room, isActive, onNavigate }: RoomItemProps) {
             )}
 
             {latestTime ? (
-              <span className="ml-auto shrink-0 text-[11px] font-bold text-slate-600">
+              <span className="ml-auto shrink-0 text-[11px] font-medium text-slate-500">
                 {latestTime}
               </span>
             ) : null}
           </div>
 
-          <div className="mt-1 flex items-center gap-2 text-xs font-semibold text-slate-400">
+          <div className="mt-0.5 flex items-center gap-1.5 text-[11px] font-medium text-slate-400">
             <UsersRound className="size-3" />
             <span>
               {room.memberCount} {room.memberCount === 1 ? "member" : "members"}
             </span>
           </div>
 
-          <div className="mt-2 flex min-w-0 items-center gap-1.5 text-xs font-semibold text-slate-500">
+          <div className="mt-1.5 flex min-w-0 items-center gap-1.5 text-[11px] font-normal text-slate-500 sm:text-xs">
             <MessageSquareText className="size-3 shrink-0" />
             <p className="truncate">
               {room.latestMessagePreview?.content ?? "No messages yet"}
@@ -106,23 +105,23 @@ export function RoomItem({ room, isActive, onNavigate }: RoomItemProps) {
         </div>
       </div>
 
-      <div className="mt-3 flex items-center justify-between gap-3">
+      <div className="mt-2.5 flex items-center justify-between gap-3">
         {room.isMember ? (
-          <div className="flex items-center gap-2 text-xs font-bold text-emerald-300">
-            <span className="size-1.5 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.8)]" />
+          <div className="flex items-center gap-2 text-[11px] font-medium text-emerald-300">
+            <span className="size-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.45)]" />
             {room.currentUserRole === "owner"
               ? "Owner"
               : room.currentUserRole === "admin"
                 ? "Admin"
-                : "Joined"}
+              : "Joined"}
           </div>
         ) : room.visibility === "public" ? (
-          <div className="flex items-center gap-2 text-xs font-bold text-slate-400">
+          <div className="flex items-center gap-2 text-[11px] font-medium text-slate-400">
             <span className="size-1.5 rounded-full bg-slate-500" />
             Public room
           </div>
         ) : (
-          <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
+          <div className="flex items-center gap-2 text-[11px] font-medium text-slate-500">
             <LockKeyhole className="size-3" />
             Invite only
           </div>
@@ -137,7 +136,7 @@ export function RoomItem({ room, isActive, onNavigate }: RoomItemProps) {
               joinRoom();
             }}
             disabled={isPending}
-            className="inline-flex h-8 items-center justify-center gap-1.5 rounded-xl border border-purple-400/30 bg-purple-500/10 px-3 text-xs font-black text-purple-200 transition hover:bg-purple-500/20 disabled:pointer-events-none disabled:opacity-70"
+            className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border border-purple-400/20 bg-slate-900 px-2.5 text-[11px] font-semibold text-purple-100 transition hover:border-purple-400/35 hover:bg-slate-800 disabled:pointer-events-none disabled:opacity-70"
           >
             {isPending ? (
               <Loader2 className="size-3.5 animate-spin" />

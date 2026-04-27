@@ -21,7 +21,7 @@ const statusConfig: Record<
     shortLabel: "Live",
     className:
       "border-emerald-400/20 bg-emerald-400/10 text-emerald-200 shadow-emerald-500/5",
-    dotClassName: "bg-emerald-400 shadow-[0_0_14px_rgba(52,211,153,0.9)]",
+    dotClassName: "bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.55)]",
     icon: "wifi",
   },
   loading: {
@@ -29,7 +29,7 @@ const statusConfig: Record<
     shortLabel: "Sync",
     className:
       "border-amber-400/20 bg-amber-400/10 text-amber-200 shadow-amber-500/5",
-    dotClassName: "bg-amber-300 shadow-[0_0_14px_rgba(252,211,77,0.9)]",
+    dotClassName: "bg-amber-300 shadow-[0_0_10px_rgba(252,211,77,0.55)]",
     icon: "loader",
   },
   reconnecting: {
@@ -37,13 +37,14 @@ const statusConfig: Record<
     shortLabel: "Sync",
     className:
       "border-amber-400/20 bg-amber-400/10 text-amber-200 shadow-amber-500/5",
-    dotClassName: "bg-amber-300 shadow-[0_0_14px_rgba(252,211,77,0.9)]",
+    dotClassName: "bg-amber-300 shadow-[0_0_10px_rgba(252,211,77,0.55)]",
     icon: "loader",
   },
   disconnected: {
     label: "Offline",
     shortLabel: "Off",
-    className: "border-slate-700 bg-slate-900 text-slate-400 shadow-black/10",
+    className:
+      "border-slate-800 bg-slate-900/80 text-slate-400 shadow-black/10",
     dotClassName: "bg-slate-500",
     icon: "off",
   },
@@ -62,7 +63,7 @@ export function RealtimeStatus({ status }: RealtimeStatusProps) {
 
   return (
     <div
-      className={`inline-flex h-10 items-center gap-2 rounded-xl border px-3 text-xs font-black shadow-lg transition ${config.className}`}
+      className={`inline-flex h-9 items-center gap-2 rounded-lg border px-2.5 text-[11px] font-semibold shadow-md transition ${config.className}`}
       title={`Realtime status: ${config.label}`}
       aria-label={`Realtime status: ${config.label}`}
     >

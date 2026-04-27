@@ -13,6 +13,7 @@ export type ChatLatestMessagePreview = {
   id: string;
   content: string;
   createdAt: string;
+  timeLabel: string;
   authorUsername: string;
 };
 

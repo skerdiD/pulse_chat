@@ -92,8 +92,8 @@ export function CreateRoomDialog({
         onClick={() => setIsOpen(true)}
         className={
           variant === "compact"
-            ? "flex size-10 items-center justify-center rounded-xl bg-purple-500 text-white shadow-lg shadow-purple-500/25 transition hover:bg-purple-400"
-            : "inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-gradient-to-br from-purple-500 to-fuchsia-600 px-5 text-sm font-black text-white shadow-xl shadow-purple-500/25 transition hover:-translate-y-0.5 hover:shadow-purple-500/35"
+            ? "flex size-9 items-center justify-center rounded-lg bg-purple-500 text-white shadow-md shadow-purple-500/20 transition hover:bg-purple-400"
+            : "inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-purple-500 to-fuchsia-600 px-5 text-sm font-semibold text-white shadow-lg shadow-purple-500/20 transition hover:-translate-y-0.5 hover:shadow-purple-500/30"
         }
       >
         {variant === "compact" ? (
@@ -130,7 +130,7 @@ export function CreateRoomDialog({
 
                 <h2
                   id="create-room-title"
-                  className="text-2xl font-black tracking-[-0.04em]"
+                  className="text-2xl font-semibold tracking-[-0.04em]"
                 >
                   Create a room
                 </h2>
@@ -218,12 +218,12 @@ export function CreateRoomDialog({
                       onClick={() => form.setValue("visibility", "public")}
                       className={
                         visibility === "public"
-                          ? "rounded-2xl border border-purple-400/40 bg-purple-500/15 p-4 text-left shadow-lg shadow-purple-500/10"
+                          ? "rounded-2xl border border-slate-700 bg-slate-900 p-4 text-left ring-1 ring-purple-400/25"
                           : "rounded-2xl border border-slate-800 bg-slate-950/80 p-4 text-left transition hover:border-slate-700"
                       }
                     >
                       <Globe2 className="mb-3 size-5 text-emerald-300" />
-                      <p className="text-sm font-black text-white">Public</p>
+                      <p className="text-sm font-semibold text-white">Public</p>
                       <p className="mt-1 text-xs leading-5 text-slate-500">
                         Authenticated users can discover and join.
                       </p>
@@ -234,12 +234,12 @@ export function CreateRoomDialog({
                       onClick={() => form.setValue("visibility", "private")}
                       className={
                         visibility === "private"
-                          ? "rounded-2xl border border-purple-400/40 bg-purple-500/15 p-4 text-left shadow-lg shadow-purple-500/10"
+                          ? "rounded-2xl border border-slate-700 bg-slate-900 p-4 text-left ring-1 ring-purple-400/25"
                           : "rounded-2xl border border-slate-800 bg-slate-950/80 p-4 text-left transition hover:border-slate-700"
                       }
                     >
                       <LockKeyhole className="mb-3 size-5 text-purple-300" />
-                      <p className="text-sm font-black text-white">Private</p>
+                      <p className="text-sm font-semibold text-white">Private</p>
                       <p className="mt-1 text-xs leading-5 text-slate-500">
                         Invite system can be connected later.
                       </p>
@@ -263,7 +263,7 @@ export function CreateRoomDialog({
                   <button
                     type="submit"
                     disabled={isPending}
-                    className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-br from-purple-500 to-fuchsia-600 px-5 text-sm font-black text-white shadow-xl shadow-purple-500/25 transition hover:-translate-y-0.5 hover:shadow-purple-500/35 disabled:pointer-events-none disabled:translate-y-0 disabled:opacity-70 sm:w-auto"
+                    className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-purple-500 to-fuchsia-600 px-5 text-sm font-semibold text-white shadow-lg shadow-purple-500/20 transition hover:-translate-y-0.5 hover:shadow-purple-500/30 disabled:pointer-events-none disabled:translate-y-0 disabled:opacity-70 sm:w-auto"
                   >
                     {isPending ? (
                       <>

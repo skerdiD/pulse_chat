@@ -42,6 +42,7 @@ export function MessageActions({
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const isExpanded = isPickerOpen || isMoreOpen;
 
   useEffect(() => {
     if (!isPickerOpen && !isMoreOpen) {
@@ -133,16 +134,20 @@ export function MessageActions({
 
   const buttonClass =
     variant === "desktop"
-      ? "flex size-8 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-800 hover:text-white disabled:pointer-events-none disabled:opacity-60"
-      : "inline-flex h-9 items-center justify-center gap-1.5 rounded-full border border-slate-800 bg-slate-950/70 px-3 text-xs font-bold text-slate-400 transition hover:border-slate-700 hover:text-white disabled:pointer-events-none disabled:opacity-60";
+      ? "flex size-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-800/90 hover:text-white disabled:pointer-events-none disabled:opacity-60"
+      : "inline-flex h-8 items-center justify-center gap-1.5 rounded-full border border-slate-800 bg-slate-950/70 px-2.5 text-[11px] font-medium text-slate-400 transition hover:border-slate-700 hover:text-white disabled:pointer-events-none disabled:opacity-60";
 
   return (
     <div
       ref={actionsRef}
       className={
         variant === "desktop"
-          ? "absolute right-3 top-2 hidden items-center gap-1 rounded-2xl border border-slate-800 bg-slate-950/95 p-1 opacity-0 shadow-2xl shadow-black/30 backdrop-blur-xl transition group-hover:opacity-100 group-focus-within:opacity-100 sm:flex"
-          : "relative mt-3 flex flex-wrap gap-2 pl-[52px] sm:hidden"
+          ? `absolute right-2 top-1.5 hidden items-center gap-0.5 rounded-xl border border-slate-800 bg-slate-950/95 p-0.5 shadow-xl shadow-black/25 backdrop-blur-xl transition sm:flex ${
+              isExpanded
+                ? "pointer-events-auto z-40 opacity-100"
+                : "pointer-events-none opacity-0 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100"
+            }`
+          : "relative mt-2.5 flex flex-wrap gap-2 pl-[44px] sm:hidden"
       }
     >
       <button
@@ -215,8 +220,8 @@ export function MessageActions({
               role="menu"
               className={
                 variant === "desktop"
-                  ? "absolute right-0 top-10 z-30 w-44 overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 p-1 shadow-2xl shadow-black/40"
-                  : "absolute bottom-11 left-0 z-30 w-44 overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 p-1 shadow-2xl shadow-black/40"
+                  ? "absolute right-0 bottom-[calc(100%+0.5rem)] z-40 w-40 overflow-hidden rounded-xl border border-slate-800 bg-slate-950 p-1 shadow-2xl shadow-black/40"
+                  : "absolute left-0 bottom-[calc(100%+0.5rem)] z-40 w-40 overflow-hidden rounded-xl border border-slate-800 bg-slate-950 p-1 shadow-2xl shadow-black/40"
               }
             >
               <button
@@ -224,7 +229,7 @@ export function MessageActions({
                 role="menuitem"
                 onClick={handleEdit}
                 disabled={isPending}
-                className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-bold text-slate-300 transition hover:bg-slate-900 hover:text-white disabled:pointer-events-none disabled:opacity-60"
+                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-medium text-slate-300 transition hover:bg-slate-900 hover:text-white disabled:pointer-events-none disabled:opacity-60"
               >
                 <Pencil className="size-3.5" />
                 Edit message
@@ -235,7 +240,7 @@ export function MessageActions({
                 role="menuitem"
                 onClick={deleteMessage}
                 disabled={isPending}
-                className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-bold text-red-300 transition hover:bg-red-500/10 hover:text-red-200 disabled:pointer-events-none disabled:opacity-60"
+                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-medium text-red-300 transition hover:bg-red-500/10 hover:text-red-200 disabled:pointer-events-none disabled:opacity-60"
               >
                 <Trash2 className="size-3.5" />
                 Delete message

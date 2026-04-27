@@ -41,8 +41,8 @@ export function ReactionBadge({ messageId, reaction }: ReactionBadgeProps) {
       }
       className={
         reaction.reactedByCurrentUser
-          ? "inline-flex h-8 items-center gap-1.5 rounded-full border border-purple-400/40 bg-purple-500/20 px-3 text-xs font-black text-purple-100 shadow-lg shadow-purple-500/10 transition hover:bg-purple-500/30 disabled:pointer-events-none disabled:opacity-70"
-          : "inline-flex h-8 items-center gap-1.5 rounded-full border border-slate-700/80 bg-slate-900/80 px-3 text-xs font-bold text-slate-300 transition hover:border-purple-400/30 hover:bg-purple-500/10 hover:text-purple-100 disabled:pointer-events-none disabled:opacity-70"
+          ? "inline-flex h-7 items-center gap-1.5 rounded-full border border-purple-400/25 bg-slate-900 px-2.5 text-[11px] font-medium text-purple-100 ring-1 ring-purple-400/15 shadow-sm shadow-black/20 transition hover:border-purple-400/35 disabled:pointer-events-none disabled:opacity-70"
+          : "inline-flex h-7 items-center gap-1.5 rounded-full border border-slate-700/80 bg-slate-900/75 px-2.5 text-[11px] font-medium text-slate-300 transition hover:border-purple-400/25 hover:bg-slate-900 hover:text-purple-100 disabled:pointer-events-none disabled:opacity-70"
       }
     >
       <span aria-hidden="true">{reaction.emoji}</span>

@@ -94,8 +94,8 @@ export function ChatRoom({
           onMessageFailed={failOptimisticMessage}
         />
       ) : (
-        <div className="shrink-0 border-t border-slate-800/90 bg-slate-950/72 p-4 shadow-2xl shadow-black/20 backdrop-blur-xl">
-          <div className="mx-auto flex w-full max-w-5xl items-center gap-3 rounded-2xl border border-slate-800 bg-slate-950 p-4 text-sm font-semibold text-slate-400">
+        <div className="shrink-0 border-t border-slate-800/90 bg-slate-950/78 p-3 shadow-xl shadow-black/15 backdrop-blur-xl">
+          <div className="mx-auto flex w-full max-w-5xl items-center gap-3 rounded-xl border border-slate-800 bg-slate-950/95 p-3.5 text-sm font-medium text-slate-400">
             <LockKeyhole className="size-4 text-purple-300" />
             Join this room before sending messages.
           </div>

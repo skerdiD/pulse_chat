@@ -57,7 +57,7 @@ export function ChatLayout({
               <button
                 type="button"
                 onClick={() => setIsMobileRoomsOpen(true)}
-                className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-slate-800 bg-slate-950/90 px-4 text-sm font-black text-white shadow-2xl shadow-black/40 backdrop-blur-xl"
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-800 bg-slate-950/90 px-3.5 text-sm font-semibold text-white shadow-xl shadow-black/30 backdrop-blur-xl"
               >
                 <Menu className="size-4" />
                 Rooms

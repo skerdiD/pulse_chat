@@ -64,7 +64,10 @@ export function formatJoinedDate(value: string) {
   }).format(date);
 }
 
-export function formatRoomPreviewTime(value?: string | null) {
+export function formatRoomPreviewTime(
+  value?: string | null,
+  referenceNow: number | string | Date = Date.now(),
+) {
   if (!value) {
     return "";
   }
@@ -75,7 +78,12 @@ export function formatRoomPreviewTime(value?: string | null) {
     return "";
   }
 
-  const now = Date.now();
+  const now = new Date(referenceNow).getTime();
+
+  if (Number.isNaN(now)) {
+    return "";
+  }
+
   const diffMs = now - date.getTime();
   const diffMinutes = Math.floor(diffMs / 60_000);
   const diffHours = Math.floor(diffMs / 3_600_000);

@@ -41,7 +41,7 @@ export function InitialAvatar({
         className,
       )}
     >
-      <div className="grid size-full place-items-center overflow-hidden rounded-full bg-gradient-to-br from-purple-400 via-purple-500 to-fuchsia-600 font-black leading-none text-white shadow-lg shadow-purple-500/20">
+      <div className="grid size-full place-items-center overflow-hidden rounded-full border border-slate-700/80 bg-gradient-to-br from-slate-700 via-slate-800 to-slate-900 font-semibold leading-none text-white shadow-md shadow-black/25">
         {safeAvatarUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -60,7 +60,7 @@ export function InitialAvatar({
       {showStatus ? (
         <span
           className={cn(
-            "absolute -bottom-0.5 -right-0.5 rounded-full border-[#050816] bg-emerald-400 shadow-[0_0_0_1px_rgba(16,185,129,0.28),0_0_14px_rgba(16,185,129,0.28)]",
+            "absolute -bottom-0.5 -right-0.5 rounded-full border-[#050816] bg-emerald-400 shadow-[0_0_0_1px_rgba(16,185,129,0.22),0_0_12px_rgba(16,185,129,0.22)]",
             statusSizeClasses[size],
           )}
         />
