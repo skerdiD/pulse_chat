@@ -1,21 +1,12 @@
 import { Crown, ShieldCheck, UserRound } from "lucide-react";
 
-import { getSafeAvatarUrl } from "@/lib/avatar";
+import { InitialAvatar } from "@/components/chat/initial-avatar";
 import type { ChatRoomMember } from "@/types/chat";
 
 type MemberListProps = {
   members: ChatRoomMember[];
   currentUserId: string;
 };
-
-function getInitials(username: string) {
-  return username
-    .split(" ")
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-}
 
 function formatJoinedDate(value: string) {
   return new Intl.DateTimeFormat("en", {
@@ -86,50 +77,38 @@ export function MemberList({ members, currentUserId }: MemberListProps) {
 
       {sortedMembers.length > 0 ? (
         <div className="space-y-2">
-          {sortedMembers.map((member) => {
-            const memberAvatarUrl = getSafeAvatarUrl(member.avatarUrl);
+          {sortedMembers.map((member) => (
+            <div
+              key={member.id}
+              className="flex items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900/45 p-3"
+            >
+              <InitialAvatar
+                username={member.username}
+                avatarUrl={member.avatarUrl}
+                size="md"
+              />
 
-            return (
-              <div
-                key={member.id}
-                className="flex items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900/45 p-3"
-              >
-                <div className="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-purple-400 via-purple-500 to-fuchsia-600 text-xs font-black text-white shadow-lg shadow-purple-500/20">
-                  {memberAvatarUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={memberAvatarUrl}
-                      alt={`${member.username} avatar`}
-                      className="size-full object-cover"
-                      referrerPolicy="no-referrer"
-                    />
-                  ) : (
-                    getInitials(member.username)
-                  )}
-                </div>
-
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="truncate text-sm font-black text-white">
-                      {member.username}
-                    </p>
-
-                    {member.userId === currentUserId ? (
-                      <span className="rounded-full border border-purple-400/20 bg-purple-500/10 px-2 py-0.5 text-[11px] font-black text-purple-200">
-                        You
-                      </span>
-                    ) : null}
-                  </div>
-
-                  <p className="mt-1 text-xs font-semibold text-slate-500">
-                    Joined {formatJoinedDate(member.joinedAt)}
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="truncate text-sm font-black text-white">
+                    {member.username}
                   </p>
+
+                  {member.userId === currentUserId ? (
+                    <span className="rounded-full border border-purple-400/20 bg-purple-500/10 px-2 py-0.5 text-[11px] font-black text-purple-200">
+                      You
+                    </span>
+                  ) : null}
                 </div>
 
-                <RoleBadge role={member.role} />
+                <p className="mt-1 text-xs font-semibold text-slate-500">
+                  Joined {formatJoinedDate(member.joinedAt)}
+                </p>
               </div>
-            );
-          })}
+
+              <RoleBadge role={member.role} />
+            </div>
+          ))}
         </div>
       ) : (
         <div className="rounded-2xl border border-slate-800 bg-slate-900/45 p-5 text-center">

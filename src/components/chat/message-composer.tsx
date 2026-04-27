@@ -3,14 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useTransition } from "react";
 import { useForm, useWatch } from "react-hook-form";
-import {
-  CornerUpLeft,
-  Loader2,
-  Send,
-  SmilePlus,
-  Sparkles,
-  X,
-} from "lucide-react";
+import { CornerUpLeft, Loader2, Send, X } from "lucide-react";
 import { toast } from "sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { z } from "zod";
@@ -183,16 +176,7 @@ export function MessageComposer({
 
         <form onSubmit={handleFormSubmit}>
           <div className="rounded-[1.5rem] border border-slate-800 bg-slate-950 shadow-2xl shadow-black/20 transition focus-within:border-purple-400/40 focus-within:ring-4 focus-within:ring-purple-500/10">
-            <div className="flex items-end gap-1.5 p-2 sm:gap-2">
-              <button
-                type="button"
-                onClick={() => toast.info("Emoji picker is available on messages.")}
-                className="mb-1 flex size-10 shrink-0 items-center justify-center rounded-2xl text-slate-400 transition hover:bg-slate-900 hover:text-white"
-                aria-label="Open emoji picker"
-              >
-                <SmilePlus className="size-5" />
-              </button>
-
+            <div className="flex items-end gap-2 p-2">
               <textarea
                 ref={(node) => {
                   contentField.ref(node);
@@ -208,17 +192,8 @@ export function MessageComposer({
                 placeholder="Type a message..."
                 aria-invalid={Boolean(form.formState.errors.content)}
                 onKeyDown={handleKeyDown}
-                className="pulse-scrollbar max-h-40 min-h-11 flex-1 resize-none bg-transparent px-1 py-3 text-sm font-medium leading-6 text-white outline-none placeholder:text-slate-600"
+                className="pulse-scrollbar max-h-40 min-h-11 flex-1 resize-none rounded-2xl bg-transparent px-3 py-3 text-sm font-medium leading-6 text-white outline-none placeholder:text-slate-600 focus-visible:outline-none"
               />
-
-              <button
-                type="button"
-                onClick={() => toast.info("AI assist can be added later.")}
-                className="mb-1 hidden size-10 shrink-0 items-center justify-center rounded-2xl text-slate-400 transition hover:bg-slate-900 hover:text-white sm:flex"
-                aria-label="AI assist placeholder"
-              >
-                <Sparkles className="size-5" />
-              </button>
 
               <button
                 type="submit"

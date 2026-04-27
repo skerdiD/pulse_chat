@@ -29,32 +29,44 @@ export function ChatLayout({
   currentUser,
 }: ChatLayoutProps) {
   const [isMobileRoomsOpen, setIsMobileRoomsOpen] = useState(false);
+  const [sidebarMode, setSidebarMode] = useState<"profile" | "settings">(
+    "profile",
+  );
   const activeRoom = rooms.find((room) => room.id === activeRoomId) ?? null;
 
+  function openRoomSettings() {
+    setSidebarMode("settings");
+    setIsMobileRoomsOpen(true);
+  }
+
   return (
-    <main className="flex min-h-screen overflow-hidden bg-[#050816] text-white">
+    <main className="flex h-dvh min-h-0 overflow-hidden bg-[#050816] text-white">
       <RoomSidebar
         rooms={rooms}
         activeRoomId={activeRoomId}
+        activeRoom={activeRoom}
+        members={members}
         currentUser={currentUser}
+        mode={sidebarMode}
+        onModeChange={setSidebarMode}
         isMobileOpen={isMobileRoomsOpen}
         onMobileOpen={() => setIsMobileRoomsOpen(true)}
         onMobileClose={() => setIsMobileRoomsOpen(false)}
       />
 
-      <section className="flex min-w-0 flex-1 flex-col">
+      <section className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         {activeRoom ? (
           <ChatRoom
             key={activeRoom.id}
             room={activeRoom}
             messages={messages}
-            members={members}
             currentUser={currentUser}
             canSendMessages={activeRoom.isMember}
             onOpenRooms={() => setIsMobileRoomsOpen(true)}
+            onOpenRoomSettings={openRoomSettings}
           />
         ) : (
-          <div className="relative flex min-h-screen flex-1 flex-col">
+          <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
             <div className="absolute left-4 top-4 z-30 lg:hidden">
               <button
                 type="button"

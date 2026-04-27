@@ -9,8 +9,8 @@ import {
   ChevronDown,
 } from "lucide-react";
 
+import { InitialAvatar } from "@/components/chat/initial-avatar";
 import { ProfileSettingsDialog } from "@/components/chat/profile-settings-dialog";
-import { getSafeAvatarUrl } from "@/lib/avatar";
 import { logoutAction } from "@/server/actions/auth";
 import type { CurrentChatUser } from "@/types/chat";
 
@@ -19,20 +19,10 @@ type ProfileMenuProps = {
   compact?: boolean;
 };
 
-function getInitials(username: string) {
-  return username
-    .split(" ")
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-}
-
 export function ProfileMenu({ currentUser, compact = false }: ProfileMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
-  const avatarUrl = getSafeAvatarUrl(currentUser.avatarUrl);
 
   useEffect(() => {
     function handlePointerDown(event: PointerEvent) {
@@ -57,20 +47,12 @@ export function ProfileMenu({ currentUser, compact = false }: ProfileMenuProps) 
   }, []);
 
   const avatar = (
-    <div className="relative flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-purple-400 via-purple-500 to-fuchsia-600 text-xs font-black text-white shadow-lg shadow-purple-500/20">
-      {avatarUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={avatarUrl}
-          alt={`${currentUser.username} avatar`}
-          className="size-full object-cover"
-          referrerPolicy="no-referrer"
-        />
-      ) : (
-        getInitials(currentUser.username)
-      )}
-      <span className="absolute bottom-0 right-0 size-3 rounded-full border-2 border-slate-950 bg-emerald-400" />
-    </div>
+    <InitialAvatar
+      username={currentUser.username}
+      avatarUrl={currentUser.avatarUrl}
+      size="sm"
+      showStatus
+    />
   );
 
   return (

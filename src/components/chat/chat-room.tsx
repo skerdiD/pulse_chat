@@ -11,26 +11,25 @@ import type {
   ChatMessage,
   ChatMessageReplyPreview,
   ChatRoom as ChatRoomType,
-  ChatRoomMember,
   CurrentChatUser,
 } from "@/types/chat";
 
 type ChatRoomProps = {
   room: ChatRoomType;
   messages: ChatMessage[];
-  members: ChatRoomMember[];
   currentUser: CurrentChatUser;
   canSendMessages: boolean;
   onOpenRooms: () => void;
+  onOpenRoomSettings: () => void;
 };
 
 export function ChatRoom({
   room,
   messages: initialMessages,
-  members,
   currentUser,
   canSendMessages,
   onOpenRooms,
+  onOpenRoomSettings,
 }: ChatRoomProps) {
   const [replyToMessage, setReplyToMessage] =
     useState<ChatMessageReplyPreview | null>(null);
@@ -61,13 +60,13 @@ export function ChatRoom({
   });
 
   return (
-    <div className="flex min-h-screen min-w-0 flex-1 flex-col">
+    <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
       <ChatHeader
         room={room}
-        members={members}
         currentUser={currentUser}
         realtimeStatus={realtimeStatus}
         onOpenRooms={onOpenRooms}
+        onOpenRoomSettings={onOpenRoomSettings}
       />
 
       <MessageList

@@ -12,11 +12,11 @@ import {
 import { Check, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 
+import { InitialAvatar } from "@/components/chat/initial-avatar";
 import { MessageActions } from "@/components/chat/message-actions";
 import { ReactionBadge } from "@/components/chat/reaction-badge";
 import { ReplyPreview } from "@/components/chat/reply-preview";
-import { getSafeAvatarUrl } from "@/lib/avatar";
-import { formatMessageTime, getInitials } from "@/lib/format";
+import { formatMessageTime } from "@/lib/format";
 import { updateMessageAction } from "@/server/actions/messages";
 import type { ChatMessage } from "@/types/chat";
 
@@ -55,7 +55,6 @@ export const MessageItem = memo(function MessageItem({
       }),
     [message.reactions],
   );
-  const authorAvatarUrl = getSafeAvatarUrl(message.author.avatarUrl);
 
   useEffect(() => {
     if (!isEditing) {
@@ -149,21 +148,13 @@ export const MessageItem = memo(function MessageItem({
   return (
     <article className="group relative rounded-3xl px-2 py-3 transition duration-150 hover:bg-slate-900/45 sm:px-3">
       <div className="flex gap-3">
-        <div className="relative mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-purple-400 via-purple-500 to-fuchsia-600 text-xs font-black text-white shadow-lg shadow-purple-500/20 sm:size-11">
-          {authorAvatarUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={authorAvatarUrl}
-              alt={`${message.author.username} avatar`}
-              className="size-full rounded-full object-cover"
-              referrerPolicy="no-referrer"
-            />
-          ) : (
-            getInitials(message.author.username)
-          )}
-
-          <span className="absolute bottom-0 right-0 size-3 rounded-full border-2 border-[#050816] bg-emerald-400" />
-        </div>
+        <InitialAvatar
+          username={message.author.username}
+          avatarUrl={message.author.avatarUrl}
+          size="md"
+          showStatus
+          className="mt-0.5 size-10 sm:size-11"
+        />
 
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
