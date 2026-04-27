@@ -36,6 +36,19 @@ test.describe("marketing homepage", () => {
     );
   });
 
+  test("navigates to the features section from the hero CTA", async ({ page }) => {
+    await page.goto("/");
+
+    await page.getByRole("link", { name: /explore features/i }).click();
+
+    await expect(page).toHaveURL(/#features$/);
+    await expect(
+      page.getByRole("heading", {
+        name: /a serious foundation for a real chat product/i
+      })
+    ).toBeVisible();
+  });
+
   test("shows the core feature cards", async ({ page }) => {
     await page.goto("/");
 

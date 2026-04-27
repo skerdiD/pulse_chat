@@ -37,9 +37,45 @@ describe("profile validators", () => {
     }
   });
 
+  it("allows omitted avatar URL", () => {
+    const result = updateProfileSchema.safeParse({
+      username: "Skerdi Dev"
+    });
+
+    expect(result.success).toBe(true);
+
+    if (result.success) {
+      expect(result.data.avatarUrl).toBeUndefined();
+    }
+  });
+
+  it("accepts usernames at the 30 character limit", () => {
+    const username = "a".repeat(30);
+
+    const result = updateProfileSchema.safeParse({
+      username,
+      avatarUrl: ""
+    });
+
+    expect(result.success).toBe(true);
+
+    if (result.success) {
+      expect(result.data.username).toBe(username);
+    }
+  });
+
   it("rejects short usernames", () => {
     const result = updateProfileSchema.safeParse({
       username: "Sk",
+      avatarUrl: ""
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects usernames over 30 characters", () => {
+    const result = updateProfileSchema.safeParse({
+      username: "a".repeat(31),
       avatarUrl: ""
     });
 
@@ -59,6 +95,15 @@ describe("profile validators", () => {
     const result = updateProfileSchema.safeParse({
       username: "Skerdi Dev",
       avatarUrl: "not-a-url"
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects non-http avatar URLs", () => {
+    const result = updateProfileSchema.safeParse({
+      username: "Skerdi Dev",
+      avatarUrl: "javascript:alert(1)"
     });
 
     expect(result.success).toBe(false);

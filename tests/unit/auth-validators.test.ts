@@ -111,6 +111,17 @@ describe("auth validators", () => {
       expect(result.success).toBe(false);
     });
 
+    it("rejects passwords over 72 characters", () => {
+      const result = signupSchema.safeParse({
+        username: "Skerdi Dev",
+        email: "skerdi@example.com",
+        password: "a".repeat(73),
+        confirmPassword: "a".repeat(73)
+      });
+
+      expect(result.success).toBe(false);
+    });
+
     it("rejects password confirmation mismatch", () => {
       const result = signupSchema.safeParse({
         username: "Skerdi Dev",

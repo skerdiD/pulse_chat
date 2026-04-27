@@ -75,6 +75,16 @@ describe("chat validators", () => {
       expect(result.success).toBe(false);
     });
 
+    it("rejects descriptions over 240 characters", () => {
+      const result = createRoomSchema.safeParse({
+        name: "General",
+        description: "a".repeat(241),
+        visibility: "public"
+      });
+
+      expect(result.success).toBe(false);
+    });
+
     it("rejects invalid visibility", () => {
       const result = createRoomSchema.safeParse({
         name: "General",
@@ -157,6 +167,15 @@ describe("chat validators", () => {
       expect(result.success).toBe(true);
     });
 
+    it("accepts content at the 2000 character limit", () => {
+      const result = sendMessageSchema.safeParse({
+        roomId: validRoomId,
+        content: "a".repeat(2000)
+      });
+
+      expect(result.success).toBe(true);
+    });
+
     it("rejects empty message content", () => {
       const result = sendMessageSchema.safeParse({
         roomId: validRoomId,
@@ -184,6 +203,7 @@ describe("chat validators", () => {
 
       expect(result.success).toBe(false);
     });
+
   });
 
   describe("updateMessageSchema", () => {
@@ -200,6 +220,15 @@ describe("chat validators", () => {
       const result = updateMessageSchema.safeParse({
         messageId: validMessageId,
         content: ""
+      });
+
+      expect(result.success).toBe(false);
+    });
+
+    it("rejects edited content over 2000 characters", () => {
+      const result = updateMessageSchema.safeParse({
+        messageId: validMessageId,
+        content: "a".repeat(2001)
       });
 
       expect(result.success).toBe(false);
@@ -225,13 +254,35 @@ describe("chat validators", () => {
   });
 
   describe("toggleReactionSchema", () => {
-    it("accepts a valid emoji reaction", () => {
+    it("accepts a valid reaction value", () => {
       const result = toggleReactionSchema.safeParse({
         messageId: validMessageId,
-        emoji: "🔥"
+        emoji: ":fire:"
       });
 
       expect(result.success).toBe(true);
+    });
+
+    it("trims reaction values", () => {
+      const result = toggleReactionSchema.safeParse({
+        messageId: validMessageId,
+        emoji: "  :rocket:  "
+      });
+
+      expect(result.success).toBe(true);
+
+      if (result.success) {
+        expect(result.data.emoji).toBe(":rocket:");
+      }
+    });
+
+    it("rejects invalid reaction message id", () => {
+      const result = toggleReactionSchema.safeParse({
+        messageId: "bad-id",
+        emoji: ":fire:"
+      });
+
+      expect(result.success).toBe(false);
     });
 
     it("rejects empty emoji", () => {
