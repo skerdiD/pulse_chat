@@ -118,6 +118,72 @@ function areReactionSummariesEqual(
   });
 }
 
+function areReplyPreviewsEqual(
+  current: ChatMessageReplyPreview | null,
+  next: ChatMessageReplyPreview | null,
+) {
+  if (current === next) {
+    return true;
+  }
+
+  if (!current || !next) {
+    return false;
+  }
+
+  return (
+    current.id === next.id &&
+    current.content === next.content &&
+    current.authorUsername === next.authorUsername &&
+    current.createdAt === next.createdAt
+  );
+}
+
+function areMessagesEqual(current: ChatMessage, next: ChatMessage) {
+  return (
+    current.id === next.id &&
+    current.roomId === next.roomId &&
+    current.userId === next.userId &&
+    current.replyToMessageId === next.replyToMessageId &&
+    current.content === next.content &&
+    current.isEdited === next.isEdited &&
+    current.createdAt === next.createdAt &&
+    current.updatedAt === next.updatedAt &&
+    current.author.id === next.author.id &&
+    current.author.username === next.author.username &&
+    current.author.avatarUrl === next.author.avatarUrl &&
+    areReplyPreviewsEqual(current.replyToMessage, next.replyToMessage) &&
+    areReactionSummariesEqual(current.reactions, next.reactions)
+  );
+}
+
+function mergeRealtimeMessages(
+  realtimeMessages: ChatMessage[],
+  serverMessages: ChatMessage[],
+  roomId: string,
+) {
+  const messageById = new Map<string, ChatMessage>();
+
+  for (const serverMessage of sortMessagesByCreatedAt(serverMessages)) {
+    if (serverMessage.roomId === roomId) {
+      messageById.set(serverMessage.id, serverMessage);
+    }
+  }
+
+  for (const realtimeMessage of sortMessagesByCreatedAt(realtimeMessages)) {
+    if (realtimeMessage.roomId !== roomId) {
+      continue;
+    }
+
+    const serverMessage = messageById.get(realtimeMessage.id);
+
+    if (!serverMessage || !areMessagesEqual(serverMessage, realtimeMessage)) {
+      messageById.set(realtimeMessage.id, realtimeMessage);
+    }
+  }
+
+  return sortMessagesByCreatedAt(Array.from(messageById.values()));
+}
+
 export function useRoomRealtime({
   roomId,
   initialMessages,
@@ -125,8 +191,10 @@ export function useRoomRealtime({
   enabled,
 }: UseRoomRealtimeParams) {
   const supabase = useMemo(() => createClient(), []);
-  const [messages, setMessages] = useState<ChatMessage[]>(() =>
-    sortMessagesByCreatedAt(initialMessages),
+  const [realtimeMessages, setRealtimeMessages] = useState<ChatMessage[]>([]);
+  const messages = useMemo(
+    () => mergeRealtimeMessages(realtimeMessages, initialMessages, roomId),
+    [initialMessages, realtimeMessages, roomId],
   );
   const [status, setStatus] = useState<RealtimeConnectionStatus>("loading");
   const [typingUsers, setTypingUsers] = useState<TypingUser[]>([]);
@@ -281,27 +349,32 @@ export function useRoomRealtime({
 
       const reactions = await fetchReactionSummaries(messageId);
 
-      setMessages((currentMessages) => {
-        let didUpdate = false;
+      setRealtimeMessages((currentMessages) => {
+        const currentOverride = currentMessages.find(
+          (message) => message.id === messageId,
+        );
+        const baseMessage = currentOverride ?? existingMessage;
 
-        const nextMessages = currentMessages.map((message) => {
+        if (areReactionSummariesEqual(baseMessage.reactions, reactions)) {
+          return currentMessages;
+        }
+
+        const updatedMessage = {
+          ...baseMessage,
+          reactions,
+        };
+
+        if (!currentOverride) {
+          return sortMessagesByCreatedAt([...currentMessages, updatedMessage]);
+        }
+
+        return currentMessages.map((message) => {
           if (message.id !== messageId) {
             return message;
           }
 
-          if (areReactionSummariesEqual(message.reactions, reactions)) {
-            return message;
-          }
-
-          didUpdate = true;
-
-          return {
-            ...message,
-            reactions,
-          };
+          return updatedMessage;
         });
-
-        return didUpdate ? nextMessages : currentMessages;
       });
     },
     [fetchReactionSummaries, roomId],
@@ -388,7 +461,7 @@ export function useRoomRealtime({
               return;
             }
 
-            setMessages((currentMessages) => {
+            setRealtimeMessages((currentMessages) => {
               if (
                 currentMessages.some(
                   (currentMessage) => currentMessage.id === message.id,
