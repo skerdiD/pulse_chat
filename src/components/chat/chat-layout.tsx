@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+
 import { Menu } from "lucide-react";
 
 import { ChatEmptyState } from "@/components/chat/chat-empty-state";
@@ -25,32 +26,18 @@ export function ChatLayout({
   rooms,
   activeRoomId,
   messages,
-  members,
   currentUser,
 }: ChatLayoutProps) {
   const [isMobileRoomsOpen, setIsMobileRoomsOpen] = useState(false);
-  const [sidebarMode, setSidebarMode] = useState<"profile" | "settings">(
-    "profile",
-  );
-  const activeRoom = rooms.find((room) => room.id === activeRoomId) ?? null;
 
-  function openRoomSettings() {
-    setSidebarMode("settings");
-    setIsMobileRoomsOpen(true);
-  }
+  const activeRoom = rooms.find((room) => room.id === activeRoomId) ?? null;
 
   return (
     <main className="flex h-dvh min-h-0 overflow-hidden bg-[#050816] text-white">
       <RoomSidebar
         rooms={rooms}
         activeRoomId={activeRoomId}
-        activeRoom={activeRoom}
-        members={members}
-        currentUser={currentUser}
-        mode={sidebarMode}
-        onModeChange={setSidebarMode}
         isMobileOpen={isMobileRoomsOpen}
-        onMobileOpen={() => setIsMobileRoomsOpen(true)}
         onMobileClose={() => setIsMobileRoomsOpen(false)}
       />
 
@@ -63,7 +50,6 @@ export function ChatLayout({
             currentUser={currentUser}
             canSendMessages={activeRoom.isMember}
             onOpenRooms={() => setIsMobileRoomsOpen(true)}
-            onOpenRoomSettings={openRoomSettings}
           />
         ) : (
           <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">

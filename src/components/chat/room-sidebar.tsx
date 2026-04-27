@@ -1,191 +1,50 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import {
-  ArrowLeft,
-  Crown,
-  Hash,
-  LockKeyhole,
-  Radio,
-  Search,
-  Settings,
-  UsersRound,
-  X,
-} from "lucide-react";
+
+import { LockKeyhole, Search, Settings, X } from "lucide-react";
 
 import { CreateRoomDialog } from "@/components/chat/create-room-dialog";
-import { InitialAvatar } from "@/components/chat/initial-avatar";
-import { ProfileMenu } from "@/components/chat/profile-menu";
 import { RoomItem } from "@/components/chat/room-item";
 import { AppLogo } from "@/components/shared/AppLogo";
-import type { ChatRoom, ChatRoomMember, CurrentChatUser } from "@/types/chat";
+import type { ChatRoom } from "@/types/chat";
 
 type RoomSidebarProps = {
   rooms: ChatRoom[];
   activeRoomId: string | null;
-  activeRoom: ChatRoom | null;
-  members: ChatRoomMember[];
-  currentUser: CurrentChatUser;
-  mode: "profile" | "settings";
-  onModeChange: (mode: "profile" | "settings") => void;
   isMobileOpen: boolean;
-  onMobileOpen: () => void;
   onMobileClose: () => void;
 };
 
-function SidebarSettingsPanel({
-  room,
-  members,
-  currentUserId,
-  onClose,
-}: {
-  room: ChatRoom | null;
-  members: ChatRoomMember[];
-  currentUserId: string;
-  onClose: () => void;
-}) {
-  const currentMember = members.find((member) => member.userId === currentUserId);
-  const shownMembers = members.slice(0, 4);
-
+function SettingsLauncher({ onNavigate }: { onNavigate?: () => void }) {
   return (
-    <section
-      aria-label="Room settings"
-      className="max-h-80 overflow-hidden rounded-2xl border border-purple-400/20 bg-slate-950/90 shadow-2xl shadow-black/25"
+    <Link
+      href="/settings"
+      onClick={onNavigate}
+      className="group flex items-center gap-3 rounded-3xl border border-slate-800 bg-slate-950/90 p-3 shadow-2xl shadow-black/25 transition hover:border-purple-400/30 hover:bg-slate-900/80 focus:outline-none focus:ring-4 focus:ring-purple-500/15"
     >
-      <div className="flex items-center justify-between gap-3 border-b border-slate-800/90 p-3">
-        <div className="flex min-w-0 items-center gap-2">
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-purple-400/20 bg-purple-500/10 text-purple-200">
-            <Settings className="size-4" />
-          </span>
-          <div className="min-w-0">
-            <h2 className="truncate text-sm font-black text-white">Settings</h2>
-            <p className="truncate text-xs font-semibold text-slate-500">
-              {room?.name ?? "No room selected"}
-            </p>
-          </div>
-        </div>
+      <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-purple-400/20 bg-purple-500/10 text-purple-200 shadow-lg shadow-purple-500/10 transition group-hover:border-purple-300/40 group-hover:bg-purple-500/15 group-hover:text-white">
+        <Settings className="size-5" />
+      </span>
 
-        <button
-          type="button"
-          onClick={onClose}
-          className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-slate-800 bg-slate-950 text-slate-400 transition hover:bg-slate-900 hover:text-white"
-          aria-label="Back to profile"
-        >
-          <ArrowLeft className="size-4" />
-        </button>
-      </div>
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-black text-white">Settings</span>
+        <span className="mt-0.5 block truncate text-xs font-semibold text-slate-500">
+          Profile, account, preferences
+        </span>
+      </span>
 
-      <div className="pulse-scrollbar max-h-64 overflow-y-auto p-3">
-        {room ? (
-          <div className="space-y-3">
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/55 p-3">
-              <div className="flex items-start gap-3">
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-purple-400/20 bg-purple-500/10 text-purple-200">
-                  {room.visibility === "private" ? (
-                    <LockKeyhole className="size-4" />
-                  ) : (
-                    <Hash className="size-4" />
-                  )}
-                </div>
-
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-black text-white">
-                    {room.name}
-                  </p>
-                  <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">
-                    {room.description || "No room description yet."}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <div className="rounded-2xl border border-slate-800 bg-slate-900/45 p-3">
-                <p className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">
-                  <Radio className="size-3" />
-                  Type
-                </p>
-                <p className="mt-1.5 text-xs font-black capitalize text-white">
-                  {room.visibility}
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-slate-800 bg-slate-900/45 p-3">
-                <p className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">
-                  <UsersRound className="size-3" />
-                  Members
-                </p>
-                <p className="mt-1.5 text-xs font-black text-white">
-                  {room.memberCount}
-                </p>
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/45 p-3">
-              <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">
-                Access
-              </p>
-              <p className="mt-1.5 text-xs font-bold text-slate-200">
-                {room.visibility === "private" ? "Invite only" : "Joinable"}
-              </p>
-            </div>
-
-            {currentMember ? (
-              <div className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/20 bg-amber-400/10 px-3 py-1.5 text-xs font-black capitalize text-amber-200">
-                <Crown className="size-3.5" />
-                {currentMember.role}
-              </div>
-            ) : null}
-
-            <div className="space-y-2">
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-xs font-black text-white">Room members</p>
-                <span className="text-xs font-bold text-slate-500">
-                  {members.length}
-                </span>
-              </div>
-
-              {shownMembers.map((member) => (
-                <div
-                  key={member.id}
-                  className="flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-900/45 p-2"
-                >
-                  <InitialAvatar
-                    username={member.username}
-                    avatarUrl={member.avatarUrl}
-                    size="sm"
-                    className="size-8 text-xs"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-xs font-black text-white">
-                      {member.username}
-                    </p>
-                    <p className="text-[11px] font-semibold capitalize text-slate-500">
-                      {member.role}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <p className="rounded-2xl border border-slate-800 bg-slate-900/45 p-3 text-xs leading-5 text-slate-500">
-            Select a room to view room settings.
-          </p>
-        )}
-      </div>
-    </section>
+      <span className="text-lg font-black text-slate-600 transition group-hover:text-purple-200">
+        →
+      </span>
+    </Link>
   );
 }
 
 export function RoomSidebar({
   rooms,
   activeRoomId,
-  activeRoom,
-  members,
-  currentUser,
-  mode,
-  onModeChange,
   isMobileOpen,
   onMobileClose,
 }: RoomSidebarProps) {
@@ -311,16 +170,7 @@ export function RoomSidebar({
       </div>
 
       <div className="mt-4 shrink-0">
-        {mode === "settings" ? (
-          <SidebarSettingsPanel
-            room={activeRoom}
-            members={members}
-            currentUserId={currentUser.id}
-            onClose={() => onModeChange("profile")}
-          />
-        ) : (
-          <ProfileMenu currentUser={currentUser} />
-        )}
+        <SettingsLauncher onNavigate={onMobileClose} />
       </div>
     </>
   );

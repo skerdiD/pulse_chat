@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
+
 import { LockKeyhole } from "lucide-react";
 
 import { ChatHeader } from "@/components/chat/chat-header";
@@ -20,7 +21,6 @@ type ChatRoomProps = {
   currentUser: CurrentChatUser;
   canSendMessages: boolean;
   onOpenRooms: () => void;
-  onOpenRoomSettings: () => void;
 };
 
 export function ChatRoom({
@@ -29,13 +29,14 @@ export function ChatRoom({
   currentUser,
   canSendMessages,
   onOpenRooms,
-  onOpenRoomSettings,
 }: ChatRoomProps) {
   const [replyToMessage, setReplyToMessage] =
     useState<ChatMessageReplyPreview | null>(null);
+
   const clearReply = useCallback(() => {
     setReplyToMessage(null);
   }, []);
+
   const handleReply = useCallback((message: ChatMessage) => {
     setReplyToMessage({
       id: message.id,
@@ -66,7 +67,6 @@ export function ChatRoom({
         currentUser={currentUser}
         realtimeStatus={realtimeStatus}
         onOpenRooms={onOpenRooms}
-        onOpenRoomSettings={onOpenRoomSettings}
       />
 
       <MessageList

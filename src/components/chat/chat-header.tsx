@@ -4,7 +4,6 @@ import {
   Menu,
   MoreHorizontal,
   Radio,
-  Settings,
   UsersRound,
 } from "lucide-react";
 
@@ -21,7 +20,6 @@ type ChatHeaderProps = {
   currentUser: CurrentChatUser;
   realtimeStatus: RealtimeConnectionStatus;
   onOpenRooms: () => void;
-  onOpenRoomSettings: () => void;
 };
 
 export function ChatHeader({
@@ -29,7 +27,6 @@ export function ChatHeader({
   currentUser,
   realtimeStatus,
   onOpenRooms,
-  onOpenRoomSettings,
 }: ChatHeaderProps) {
   const roleLabel =
     room.currentUserRole === "owner"
@@ -58,6 +55,7 @@ export function ChatHeader({
           ) : (
             <Hash className="size-5" />
           )}
+
           <span className="absolute -bottom-0.5 -right-0.5 size-3 rounded-full border-2 border-slate-950 bg-emerald-400" />
         </div>
 
@@ -73,6 +71,7 @@ export function ChatHeader({
               ) : (
                 <Radio className="size-3 text-emerald-300" />
               )}
+
               {room.visibility}
             </span>
 
@@ -107,15 +106,6 @@ export function ChatHeader({
           aria-label="More room actions"
         >
           <MoreHorizontal className="size-4" />
-        </button>
-
-        <button
-          type="button"
-          onClick={onOpenRoomSettings}
-          className="flex size-10 items-center justify-center rounded-xl border border-slate-800 bg-slate-950/70 text-slate-400 transition hover:border-purple-400/30 hover:bg-slate-900 hover:text-white"
-          aria-label="Open room settings"
-        >
-          <Settings className="size-4" />
         </button>
 
         <ProfileMenu currentUser={currentUser} compact />
