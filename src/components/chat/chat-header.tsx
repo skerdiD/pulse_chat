@@ -2,8 +2,8 @@ import {
   Hash,
   LockKeyhole,
   Menu,
-  MoreHorizontal,
   Radio,
+  Sparkles,
   UsersRound,
 } from "lucide-react";
 
@@ -100,13 +100,13 @@ export function ChatHeader({
       <div className="flex shrink-0 items-center gap-2">
         <RealtimeStatus status={realtimeStatus} />
 
-        <button
-          type="button"
-          className="hidden size-10 items-center justify-center rounded-xl border border-slate-800 bg-slate-950/70 text-slate-400 transition hover:border-purple-400/30 hover:bg-slate-900 hover:text-white md:flex"
-          aria-label="More room actions"
+        <div
+          aria-hidden="true"
+          className="hidden h-10 items-center gap-2 rounded-xl border border-purple-400/15 bg-purple-500/10 px-3 text-xs font-black uppercase tracking-[0.14em] text-purple-200 shadow-lg shadow-purple-500/10 md:flex"
         >
-          <MoreHorizontal className="size-4" />
-        </button>
+          <Sparkles className="size-3.5" />
+          Active
+        </div>
 
         <ProfileMenu currentUser={currentUser} compact />
       </div>
