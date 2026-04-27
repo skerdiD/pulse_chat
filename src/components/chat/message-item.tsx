@@ -1,12 +1,23 @@
 "use client";
 
-import { memo, useMemo } from "react";
+import { useRouter } from "next/navigation";
+import {
+  memo,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
+import { Check, Loader2, X } from "lucide-react";
+import { toast } from "sonner";
 
 import { MessageActions } from "@/components/chat/message-actions";
 import { ReactionBadge } from "@/components/chat/reaction-badge";
 import { ReplyPreview } from "@/components/chat/reply-preview";
 import { getSafeAvatarUrl } from "@/lib/avatar";
 import { formatMessageTime, getInitials } from "@/lib/format";
+import { updateMessageAction } from "@/server/actions/messages";
 import type { ChatMessage } from "@/types/chat";
 
 type MessageItemProps = {
@@ -14,13 +25,25 @@ type MessageItemProps = {
   currentUserId: string;
   isOwnMessage: boolean;
   onReply: () => void;
+  onMessageUpdated: (
+    messageId: string,
+    updates: Pick<ChatMessage, "content" | "isEdited" | "updatedAt">,
+  ) => void;
+  onMessageDeleted: (messageId: string) => void;
 };
 
 export const MessageItem = memo(function MessageItem({
   message,
   isOwnMessage,
   onReply,
+  onMessageUpdated,
+  onMessageDeleted,
 }: MessageItemProps) {
+  const router = useRouter();
+  const editTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState(message.content);
+  const [isPending, startTransition] = useTransition();
   const reactions = useMemo(
     () =>
       [...message.reactions].sort((a, b) => {
@@ -33,6 +56,95 @@ export const MessageItem = memo(function MessageItem({
     [message.reactions],
   );
   const authorAvatarUrl = getSafeAvatarUrl(message.author.avatarUrl);
+
+  useEffect(() => {
+    if (!isEditing) {
+      setEditContent(message.content);
+    }
+  }, [isEditing, message.content]);
+
+  useEffect(() => {
+    if (!isEditing) {
+      return;
+    }
+
+    const textarea = editTextareaRef.current;
+
+    if (!textarea) {
+      return;
+    }
+
+    textarea.focus();
+    textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+    textarea.style.height = "auto";
+    textarea.style.height = `${Math.min(textarea.scrollHeight, 180)}px`;
+  }, [isEditing]);
+
+  function startEditing() {
+    setEditContent(message.content);
+    setIsEditing(true);
+  }
+
+  function cancelEditing() {
+    setIsEditing(false);
+    setEditContent(message.content);
+  }
+
+  function saveEdit() {
+    const nextContent = editContent.trim();
+
+    if (!nextContent) {
+      toast.error("Message cannot be empty.");
+      return;
+    }
+
+    if (nextContent === message.content) {
+      cancelEditing();
+      return;
+    }
+
+    startTransition(async () => {
+      const result = await updateMessageAction({
+        messageId: message.id,
+        content: nextContent,
+      });
+
+      if (!result.ok) {
+        toast.error(result.error.message);
+        return;
+      }
+
+      onMessageUpdated(result.data.messageId, {
+        content: result.data.content,
+        isEdited: result.data.isEdited,
+        updatedAt: result.data.updatedAt,
+      });
+      setIsEditing(false);
+      toast.success(result.message ?? "Message edited.");
+      router.refresh();
+    });
+  }
+
+  function handleEditKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      saveEdit();
+    }
+
+    if (event.key === "Escape") {
+      cancelEditing();
+    }
+  }
+
+  function handleEditChange(event: React.ChangeEvent<HTMLTextAreaElement>) {
+    setEditContent(event.target.value);
+
+    event.currentTarget.style.height = "auto";
+    event.currentTarget.style.height = `${Math.min(
+      event.currentTarget.scrollHeight,
+      180,
+    )}px`;
+  }
 
   return (
     <article className="group relative rounded-3xl px-2 py-3 transition duration-150 hover:bg-slate-900/45 sm:px-3">
@@ -89,9 +201,50 @@ export const MessageItem = memo(function MessageItem({
             </div>
           ) : null}
 
-          <p className="mt-1 whitespace-pre-wrap break-words text-sm leading-6 text-slate-100">
-            {message.content}
-          </p>
+          {isEditing ? (
+            <div className="mt-2 max-w-3xl rounded-2xl border border-purple-400/30 bg-slate-950 p-2 shadow-xl shadow-black/20">
+              <textarea
+                ref={editTextareaRef}
+                value={editContent}
+                onChange={handleEditChange}
+                onKeyDown={handleEditKeyDown}
+                rows={1}
+                disabled={isPending}
+                aria-label="Edit message"
+                className="pulse-scrollbar max-h-44 min-h-20 w-full resize-none bg-transparent px-2 py-2 text-sm font-medium leading-6 text-white outline-none placeholder:text-slate-600 disabled:opacity-60"
+              />
+
+              <div className="mt-2 flex flex-wrap justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={cancelEditing}
+                  disabled={isPending}
+                  className="inline-flex h-9 items-center gap-2 rounded-full border border-slate-800 px-3 text-xs font-black text-slate-300 transition hover:border-slate-700 hover:text-white disabled:pointer-events-none disabled:opacity-60"
+                >
+                  <X className="size-3.5" />
+                  Cancel
+                </button>
+
+                <button
+                  type="button"
+                  onClick={saveEdit}
+                  disabled={isPending || !editContent.trim()}
+                  className="inline-flex h-9 items-center gap-2 rounded-full bg-purple-500 px-3 text-xs font-black text-white shadow-lg shadow-purple-500/20 transition hover:bg-purple-400 disabled:pointer-events-none disabled:opacity-50"
+                >
+                  {isPending ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  ) : (
+                    <Check className="size-3.5" />
+                  )}
+                  Save
+                </button>
+              </div>
+            </div>
+          ) : (
+            <p className="mt-1 whitespace-pre-wrap break-words text-sm leading-6 text-slate-100">
+              {message.content}
+            </p>
+          )}
 
           {reactions.length > 0 ? (
             <div className="mt-3 flex flex-wrap gap-2">
@@ -109,7 +262,10 @@ export const MessageItem = memo(function MessageItem({
         <MessageActions
           messageId={message.id}
           messageContent={message.content}
+          canModify={isOwnMessage}
           onReply={onReply}
+          onEdit={startEditing}
+          onDeleted={onMessageDeleted}
           variant="desktop"
         />
       </div>
@@ -117,7 +273,10 @@ export const MessageItem = memo(function MessageItem({
       <MessageActions
         messageId={message.id}
         messageContent={message.content}
+        canModify={isOwnMessage}
         onReply={onReply}
+        onEdit={startEditing}
+        onDeleted={onMessageDeleted}
         variant="mobile"
       />
     </article>

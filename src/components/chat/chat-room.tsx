@@ -51,6 +51,8 @@ export function ChatRoom({
     status: realtimeStatus,
     typingUsers,
     sendTyping,
+    applyMessageUpdate,
+    removeMessage,
   } = useRoomRealtime({
     roomId: room.id,
     initialMessages,
@@ -74,6 +76,8 @@ export function ChatRoom({
         roomName={room.name}
         typingUsers={typingUsers}
         onReply={handleReply}
+        onMessageUpdated={applyMessageUpdate}
+        onMessageDeleted={removeMessage}
       />
 
       {canSendMessages ? (

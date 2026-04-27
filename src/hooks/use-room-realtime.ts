@@ -160,17 +160,24 @@ function mergeRealtimeMessages(
   realtimeMessages: ChatMessage[],
   serverMessages: ChatMessage[],
   roomId: string,
+  deletedMessageIds: Set<string>,
 ) {
   const messageById = new Map<string, ChatMessage>();
 
   for (const serverMessage of sortMessagesByCreatedAt(serverMessages)) {
-    if (serverMessage.roomId === roomId) {
+    if (
+      serverMessage.roomId === roomId &&
+      !deletedMessageIds.has(serverMessage.id)
+    ) {
       messageById.set(serverMessage.id, serverMessage);
     }
   }
 
   for (const realtimeMessage of sortMessagesByCreatedAt(realtimeMessages)) {
-    if (realtimeMessage.roomId !== roomId) {
+    if (
+      realtimeMessage.roomId !== roomId ||
+      deletedMessageIds.has(realtimeMessage.id)
+    ) {
       continue;
     }
 
@@ -192,9 +199,18 @@ export function useRoomRealtime({
 }: UseRoomRealtimeParams) {
   const supabase = useMemo(() => createClient(), []);
   const [realtimeMessages, setRealtimeMessages] = useState<ChatMessage[]>([]);
+  const [deletedMessageIds, setDeletedMessageIds] = useState<Set<string>>(
+    () => new Set(),
+  );
   const messages = useMemo(
-    () => mergeRealtimeMessages(realtimeMessages, initialMessages, roomId),
-    [initialMessages, realtimeMessages, roomId],
+    () =>
+      mergeRealtimeMessages(
+        realtimeMessages,
+        initialMessages,
+        roomId,
+        deletedMessageIds,
+      ),
+    [deletedMessageIds, initialMessages, realtimeMessages, roomId],
   );
   const [status, setStatus] = useState<RealtimeConnectionStatus>("loading");
   const [typingUsers, setTypingUsers] = useState<TypingUser[]>([]);
@@ -203,9 +219,71 @@ export function useRoomRealtime({
   const messageByIdRef = useRef<Map<string, ChatMessage>>(new Map());
   const typingUsersRef = useRef<Map<string, TypingUser>>(new Map());
   const profileByIdRef = useRef<Map<string, ChatMessage["author"]>>(new Map());
+  const deletedMessageIdsRef = useRef<Set<string>>(new Set());
   const typingTimeoutsRef = useRef<
     Map<string, ReturnType<typeof setTimeout>>
   >(new Map());
+
+  const upsertRealtimeMessage = useCallback((message: ChatMessage) => {
+    if (deletedMessageIdsRef.current.has(message.id)) {
+      return;
+    }
+
+    setRealtimeMessages((currentMessages) => {
+      const existingMessage = currentMessages.find(
+        (currentMessage) => currentMessage.id === message.id,
+      );
+
+      if (!existingMessage) {
+        return sortMessagesByCreatedAt([...currentMessages, message]);
+      }
+
+      if (areMessagesEqual(existingMessage, message)) {
+        return currentMessages;
+      }
+
+      return currentMessages.map((currentMessage) =>
+        currentMessage.id === message.id ? message : currentMessage,
+      );
+    });
+  }, []);
+
+  const applyMessageUpdate = useCallback(
+    (
+      messageId: string,
+      updates: Pick<ChatMessage, "content" | "isEdited" | "updatedAt">,
+    ) => {
+      const existingMessage = messageByIdRef.current.get(messageId);
+
+      if (!existingMessage) {
+        return;
+      }
+
+      upsertRealtimeMessage({
+        ...existingMessage,
+        ...updates,
+      });
+    },
+    [upsertRealtimeMessage],
+  );
+
+  const removeMessage = useCallback((messageId: string) => {
+    deletedMessageIdsRef.current.add(messageId);
+
+    setDeletedMessageIds((currentIds) => {
+      if (currentIds.has(messageId)) {
+        return currentIds;
+      }
+
+      const nextIds = new Set(currentIds);
+      nextIds.add(messageId);
+      return nextIds;
+    });
+
+    setRealtimeMessages((currentMessages) =>
+      currentMessages.filter((message) => message.id !== messageId),
+    );
+  }, []);
 
   useEffect(() => {
     messageByIdRef.current = new Map(
@@ -461,20 +539,69 @@ export function useRoomRealtime({
               return;
             }
 
-            setRealtimeMessages((currentMessages) => {
-              if (
-                currentMessages.some(
-                  (currentMessage) => currentMessage.id === message.id,
-                )
-              ) {
-                return currentMessages;
-              }
+            upsertRealtimeMessage(message);
+          } catch {
+            setStatus("error");
+          }
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "messages",
+          filter: `room_id=eq.${roomId}`,
+        },
+        async (payload) => {
+          const row = payload.new as MessageRow;
 
-              return sortMessagesByCreatedAt([...currentMessages, message]);
+          if (!isActive || row.room_id !== roomId) {
+            return;
+          }
+
+          try {
+            const existingMessage = messageByIdRef.current.get(row.id);
+            const message = await serializeMessage(row);
+
+            if (!isActive) {
+              return;
+            }
+
+            upsertRealtimeMessage({
+              ...message,
+              reactions: existingMessage?.reactions ?? message.reactions,
             });
           } catch {
             setStatus("error");
           }
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "DELETE",
+          schema: "public",
+          table: "messages",
+        },
+        (payload) => {
+          const row = payload.old as Partial<MessageRow>;
+
+          if (!isActive || !row.id) {
+            return;
+          }
+
+          const existingMessage = messageByIdRef.current.get(row.id);
+
+          if (row.room_id && row.room_id !== roomId) {
+            return;
+          }
+
+          if (!row.room_id && existingMessage?.roomId !== roomId) {
+            return;
+          }
+
+          removeMessage(row.id);
         },
       )
       .on(
@@ -583,6 +710,8 @@ export function useRoomRealtime({
     serializeMessage,
     supabase,
     updateMessageReactions,
+    upsertRealtimeMessage,
+    removeMessage,
   ]);
 
   return {
@@ -590,5 +719,7 @@ export function useRoomRealtime({
     status,
     typingUsers,
     sendTyping,
+    applyMessageUpdate,
+    removeMessage,
   };
 }

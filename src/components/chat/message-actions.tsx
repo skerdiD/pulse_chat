@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import {
   Check,
@@ -13,21 +14,29 @@ import {
 import { toast } from "sonner";
 
 import { ReactionPicker } from "@/components/chat/reaction-picker";
+import { deleteMessageAction } from "@/server/actions/messages";
 import { toggleReactionAction } from "@/server/actions/reactions";
 
 type MessageActionsProps = {
   messageId: string;
   messageContent: string;
+  canModify: boolean;
   onReply: () => void;
+  onEdit: () => void;
+  onDeleted: (messageId: string) => void;
   variant?: "desktop" | "mobile";
 };
 
 export function MessageActions({
   messageId,
   messageContent,
+  canModify,
   onReply,
+  onEdit,
+  onDeleted,
   variant = "desktop",
 }: MessageActionsProps) {
+  const router = useRouter();
   const actionsRef = useRef<HTMLDivElement | null>(null);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [isMoreOpen, setIsMoreOpen] = useState(false);
@@ -94,9 +103,32 @@ export function MessageActions({
     });
   }
 
-  function showComingSoon(label: string) {
-    toast.info(`${label} can be added later with protected server actions.`);
+  function handleEdit() {
+    onEdit();
     setIsMoreOpen(false);
+  }
+
+  function deleteMessage() {
+    if (!window.confirm("Delete this message?")) {
+      setIsMoreOpen(false);
+      return;
+    }
+
+    startTransition(async () => {
+      const result = await deleteMessageAction({
+        messageId,
+      });
+
+      if (!result.ok) {
+        toast.error(result.error.message);
+        return;
+      }
+
+      onDeleted(result.data.messageId);
+      setIsMoreOpen(false);
+      toast.success(result.message ?? "Message deleted.");
+      router.refresh();
+    });
   }
 
   const buttonClass =
@@ -161,52 +193,57 @@ export function MessageActions({
         ) : null}
       </button>
 
-      <div className="relative">
-        <button
-          type="button"
-          onClick={() => {
-            setIsMoreOpen((current) => !current);
-            setIsPickerOpen(false);
-          }}
-          className={buttonClass}
-          aria-label="More message actions"
-          aria-expanded={isMoreOpen}
-        >
-          <MoreHorizontal className="size-4" />
-          {variant === "mobile" ? <span>More</span> : null}
-        </button>
-
-        {isMoreOpen ? (
-          <div
-            role="menu"
-            className={
-              variant === "desktop"
-                ? "absolute right-0 top-10 z-30 w-44 overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 p-1 shadow-2xl shadow-black/40"
-                : "absolute bottom-11 left-0 z-30 w-44 overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 p-1 shadow-2xl shadow-black/40"
-            }
+      {canModify ? (
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => {
+              setIsMoreOpen((current) => !current);
+              setIsPickerOpen(false);
+            }}
+            disabled={isPending}
+            className={buttonClass}
+            aria-label="More message actions"
+            aria-expanded={isMoreOpen}
           >
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => showComingSoon("Edit message")}
-              className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-bold text-slate-300 transition hover:bg-slate-900 hover:text-white"
-            >
-              <Pencil className="size-3.5" />
-              Edit placeholder
-            </button>
+            <MoreHorizontal className="size-4" />
+            {variant === "mobile" ? <span>More</span> : null}
+          </button>
 
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => showComingSoon("Delete message")}
-              className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-bold text-red-300 transition hover:bg-red-500/10 hover:text-red-200"
+          {isMoreOpen ? (
+            <div
+              role="menu"
+              className={
+                variant === "desktop"
+                  ? "absolute right-0 top-10 z-30 w-44 overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 p-1 shadow-2xl shadow-black/40"
+                  : "absolute bottom-11 left-0 z-30 w-44 overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 p-1 shadow-2xl shadow-black/40"
+              }
             >
-              <Trash2 className="size-3.5" />
-              Delete placeholder
-            </button>
-          </div>
-        ) : null}
-      </div>
+              <button
+                type="button"
+                role="menuitem"
+                onClick={handleEdit}
+                disabled={isPending}
+                className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-bold text-slate-300 transition hover:bg-slate-900 hover:text-white disabled:pointer-events-none disabled:opacity-60"
+              >
+                <Pencil className="size-3.5" />
+                Edit message
+              </button>
+
+              <button
+                type="button"
+                role="menuitem"
+                onClick={deleteMessage}
+                disabled={isPending}
+                className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-bold text-red-300 transition hover:bg-red-500/10 hover:text-red-200 disabled:pointer-events-none disabled:opacity-60"
+              >
+                <Trash2 className="size-3.5" />
+                Delete message
+              </button>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -15,6 +15,11 @@ type MessageListProps = {
   typingUsers: TypingUser[];
   isLoading?: boolean;
   onReply: (message: ChatMessage) => void;
+  onMessageUpdated: (
+    messageId: string,
+    updates: Pick<ChatMessage, "content" | "isEdited" | "updatedAt">,
+  ) => void;
+  onMessageDeleted: (messageId: string) => void;
 };
 
 function getTypingText(users: TypingUser[]) {
@@ -55,6 +60,8 @@ export function MessageList({
   typingUsers,
   isLoading = false,
   onReply,
+  onMessageUpdated,
+  onMessageDeleted,
 }: MessageListProps) {
   const latestMessage = messages.at(-1) ?? null;
 
@@ -164,6 +171,8 @@ export function MessageList({
                     currentUserId={currentUserId}
                     isOwnMessage={message.userId === currentUserId}
                     onReply={() => onReply(message)}
+                    onMessageUpdated={onMessageUpdated}
+                    onMessageDeleted={onMessageDeleted}
                   />
                 ))}
               </div>

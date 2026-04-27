@@ -20,9 +20,13 @@ import {
   withAuthedValidatedInput,
 } from "@/server/actions/utils";
 import {
+  messageIdSchema,
   roomIdSchema,
   sendMessageSchema,
+  updateMessageSchema,
+  type MessageIdInput,
   type SendMessageInput,
+  type UpdateMessageInput,
 } from "@/server/validators/chat";
 import type { ChatMessage, ChatMessageReactionSummary } from "@/types/chat";
 
@@ -56,6 +60,27 @@ async function isRoomMember(roomId: string, userId: string) {
     .limit(1);
 
   return Boolean(membership);
+}
+
+async function getOwnedMessageForMutation(messageId: string, userId: string) {
+  const [message] = await db
+    .select({
+      id: messages.id,
+      roomId: messages.roomId,
+      userId: messages.userId,
+    })
+    .from(messages)
+    .innerJoin(
+      roomMembers,
+      and(
+        eq(roomMembers.roomId, messages.roomId),
+        eq(roomMembers.userId, userId),
+      ),
+    )
+    .where(and(eq(messages.id, messageId), eq(messages.userId, userId)))
+    .limit(1);
+
+  return message ?? null;
 }
 
 function buildReactionMap(
@@ -273,6 +298,133 @@ export async function sendMessageAction(
         return actionError(
           "INTERNAL_ERROR",
           "Unable to send message. Please try again.",
+        );
+      }
+    },
+  );
+}
+
+export async function updateMessageAction(
+  input: UpdateMessageInput,
+): Promise<
+  ActionResponse<{
+    messageId: string;
+    content: string;
+    isEdited: boolean;
+    updatedAt: string;
+  }>
+> {
+  return withAuthedValidatedInput(
+    updateMessageSchema,
+    input,
+    async ({ input, user }) => {
+      const message = await getOwnedMessageForMutation(
+        input.messageId,
+        user.id,
+      );
+
+      if (!message) {
+        return actionError(
+          "FORBIDDEN",
+          "You can only edit your own messages in rooms you belong to.",
+        );
+      }
+
+      try {
+        const now = new Date();
+        const [updatedMessage] = await db
+          .update(messages)
+          .set({
+            content: input.content,
+            isEdited: true,
+            updatedAt: now,
+          })
+          .where(
+            and(eq(messages.id, input.messageId), eq(messages.userId, user.id)),
+          )
+          .returning({
+            id: messages.id,
+            content: messages.content,
+            isEdited: messages.isEdited,
+            updatedAt: messages.updatedAt,
+          });
+
+        if (!updatedMessage) {
+          return actionError(
+            "NOT_FOUND",
+            "This message could not be found.",
+          );
+        }
+
+        revalidatePath("/chat");
+
+        return actionSuccess(
+          {
+            messageId: updatedMessage.id,
+            content: updatedMessage.content,
+            isEdited: updatedMessage.isEdited,
+            updatedAt: updatedMessage.updatedAt.toISOString(),
+          },
+          "Message edited.",
+        );
+      } catch {
+        return actionError(
+          "INTERNAL_ERROR",
+          "Unable to edit message. Please try again.",
+        );
+      }
+    },
+  );
+}
+
+export async function deleteMessageAction(
+  input: MessageIdInput,
+): Promise<ActionResponse<{ messageId: string }>> {
+  return withAuthedValidatedInput(
+    messageIdSchema,
+    input,
+    async ({ input, user }) => {
+      const message = await getOwnedMessageForMutation(
+        input.messageId,
+        user.id,
+      );
+
+      if (!message) {
+        return actionError(
+          "FORBIDDEN",
+          "You can only delete your own messages in rooms you belong to.",
+        );
+      }
+
+      try {
+        const [deletedMessage] = await db
+          .delete(messages)
+          .where(
+            and(eq(messages.id, input.messageId), eq(messages.userId, user.id)),
+          )
+          .returning({
+            id: messages.id,
+          });
+
+        if (!deletedMessage) {
+          return actionError(
+            "NOT_FOUND",
+            "This message could not be found.",
+          );
+        }
+
+        revalidatePath("/chat");
+
+        return actionSuccess(
+          {
+            messageId: deletedMessage.id,
+          },
+          "Message deleted.",
+        );
+      } catch {
+        return actionError(
+          "INTERNAL_ERROR",
+          "Unable to delete message. Please try again.",
         );
       }
     },

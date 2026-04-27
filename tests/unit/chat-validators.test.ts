@@ -225,6 +225,15 @@ describe("chat validators", () => {
       expect(result.success).toBe(false);
     });
 
+    it("rejects invalid edited message id", () => {
+      const result = updateMessageSchema.safeParse({
+        messageId: "bad-id",
+        content: "Edited message"
+      });
+
+      expect(result.success).toBe(false);
+    });
+
     it("rejects edited content over 2000 characters", () => {
       const result = updateMessageSchema.safeParse({
         messageId: validMessageId,
