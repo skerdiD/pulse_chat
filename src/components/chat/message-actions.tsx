@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import {
   Check,
   Copy,
@@ -29,7 +28,6 @@ export function MessageActions({
   onReply,
   variant = "desktop",
 }: MessageActionsProps) {
-  const router = useRouter();
   const actionsRef = useRef<HTMLDivElement | null>(null);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [isMoreOpen, setIsMoreOpen] = useState(false);
@@ -37,6 +35,10 @@ export function MessageActions({
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
+    if (!isPickerOpen && !isMoreOpen) {
+      return;
+    }
+
     function handlePointerDown(event: PointerEvent) {
       if (!actionsRef.current?.contains(event.target as Node)) {
         setIsPickerOpen(false);
@@ -58,7 +60,7 @@ export function MessageActions({
       document.removeEventListener("pointerdown", handlePointerDown);
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, []);
+  }, [isMoreOpen, isPickerOpen]);
 
   function copyMessage() {
     startTransition(async () => {
@@ -89,7 +91,6 @@ export function MessageActions({
       }
 
       setIsPickerOpen(false);
-      router.refresh();
     });
   }
 

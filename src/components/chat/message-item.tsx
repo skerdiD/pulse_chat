@@ -1,6 +1,6 @@
 "use client";
 
-import { memo } from "react";
+import { memo, useMemo } from "react";
 
 import { MessageActions } from "@/components/chat/message-actions";
 import { ReactionBadge } from "@/components/chat/reaction-badge";
@@ -21,13 +21,17 @@ export const MessageItem = memo(function MessageItem({
   isOwnMessage,
   onReply,
 }: MessageItemProps) {
-  const reactions = [...message.reactions].sort((a, b) => {
-    if (b.count !== a.count) {
-      return b.count - a.count;
-    }
+  const reactions = useMemo(
+    () =>
+      [...message.reactions].sort((a, b) => {
+        if (b.count !== a.count) {
+          return b.count - a.count;
+        }
 
-    return a.emoji.localeCompare(b.emoji);
-  });
+        return a.emoji.localeCompare(b.emoji);
+      }),
+    [message.reactions],
+  );
   const authorAvatarUrl = getSafeAvatarUrl(message.author.avatarUrl);
 
   return (

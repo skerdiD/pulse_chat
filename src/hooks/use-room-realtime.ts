@@ -55,7 +55,7 @@ type TypingPayload = {
 
 function sortMessagesByCreatedAt(messages: ChatMessage[]) {
   return [...messages].sort(
-    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+    (a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt),
   );
 }
 
@@ -99,6 +99,25 @@ function buildReactionSummaries(
   });
 }
 
+function areReactionSummariesEqual(
+  current: ChatMessageReactionSummary[],
+  next: ChatMessageReactionSummary[],
+) {
+  if (current.length !== next.length) {
+    return false;
+  }
+
+  return current.every((reaction, index) => {
+    const nextReaction = next[index];
+
+    return (
+      reaction.emoji === nextReaction.emoji &&
+      reaction.count === nextReaction.count &&
+      reaction.reactedByCurrentUser === nextReaction.reactedByCurrentUser
+    );
+  });
+}
+
 export function useRoomRealtime({
   roomId,
   initialMessages,
@@ -115,6 +134,7 @@ export function useRoomRealtime({
   const channelRef = useRef<RealtimeChannel | null>(null);
   const messageByIdRef = useRef<Map<string, ChatMessage>>(new Map());
   const typingUsersRef = useRef<Map<string, TypingUser>>(new Map());
+  const profileByIdRef = useRef<Map<string, ChatMessage["author"]>>(new Map());
   const typingTimeoutsRef = useRef<
     Map<string, ReturnType<typeof setTimeout>>
   >(new Map());
@@ -135,19 +155,29 @@ export function useRoomRealtime({
 
   const fetchProfile = useCallback(
     async (userId: string) => {
+      const cachedProfile = profileByIdRef.current.get(userId);
+
+      if (cachedProfile) {
+        return cachedProfile;
+      }
+
       const { data } = await supabase
         .from("profiles")
         .select("id, username, avatar_url")
         .eq("id", userId)
         .maybeSingle();
 
-      const profile = data as ProfileRow | null;
+      const profileRow = data as ProfileRow | null;
 
-      return {
-        id: profile?.id ?? userId,
-        username: profile?.username ?? "Unknown user",
-        avatarUrl: getSafeAvatarUrl(profile?.avatar_url),
+      const profile = {
+        id: profileRow?.id ?? userId,
+        username: profileRow?.username ?? "Unknown user",
+        avatarUrl: getSafeAvatarUrl(profileRow?.avatar_url),
       };
+
+      profileByIdRef.current.set(userId, profile);
+
+      return profile;
     },
     [supabase],
   );
@@ -213,12 +243,11 @@ export function useRoomRealtime({
 
   const serializeMessage = useCallback(
     async (row: MessageRow): Promise<ChatMessage> => {
-      const [author, replyToMessage, reactions] = await Promise.all([
+      const [author, replyToMessage] = await Promise.all([
         fetchProfile(row.user_id),
         row.reply_to_message_id
           ? fetchReplyPreview(row.reply_to_message_id)
           : Promise.resolve(null),
-        fetchReactionSummaries(row.id),
       ]);
 
       return {
@@ -232,10 +261,10 @@ export function useRoomRealtime({
         updatedAt: new Date(row.updated_at).toISOString(),
         author,
         replyToMessage,
-        reactions,
+        reactions: [],
       };
     },
-    [fetchProfile, fetchReactionSummaries, fetchReplyPreview],
+    [fetchProfile, fetchReplyPreview],
   );
 
   const updateMessageReactions = useCallback(
@@ -246,37 +275,36 @@ export function useRoomRealtime({
         return;
       }
 
-      const { data: messageData } = await supabase
-        .from("messages")
-        .select("id, room_id")
-        .eq("id", messageId)
-        .maybeSingle();
-
-      const messageRoom = messageData as
-        | {
-            id: string;
-            room_id: string;
-          }
-        | null;
-
-      if (!messageRoom || messageRoom.room_id !== roomId) {
+      if (existingMessage.roomId !== roomId) {
         return;
       }
 
       const reactions = await fetchReactionSummaries(messageId);
 
-      setMessages((currentMessages) =>
-        currentMessages.map((message) =>
-          message.id === messageId
-            ? {
-                ...message,
-                reactions,
-              }
-            : message,
-        ),
-      );
+      setMessages((currentMessages) => {
+        let didUpdate = false;
+
+        const nextMessages = currentMessages.map((message) => {
+          if (message.id !== messageId) {
+            return message;
+          }
+
+          if (areReactionSummariesEqual(message.reactions, reactions)) {
+            return message;
+          }
+
+          didUpdate = true;
+
+          return {
+            ...message,
+            reactions,
+          };
+        });
+
+        return didUpdate ? nextMessages : currentMessages;
+      });
     },
-    [fetchReactionSummaries, roomId, supabase],
+    [fetchReactionSummaries, roomId],
   );
 
   const sendTyping = useCallback(() => {

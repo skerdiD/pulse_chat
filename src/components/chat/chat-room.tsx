@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { LockKeyhole } from "lucide-react";
 
 import { ChatHeader } from "@/components/chat/chat-header";
@@ -34,6 +34,17 @@ export function ChatRoom({
 }: ChatRoomProps) {
   const [replyToMessage, setReplyToMessage] =
     useState<ChatMessageReplyPreview | null>(null);
+  const clearReply = useCallback(() => {
+    setReplyToMessage(null);
+  }, []);
+  const handleReply = useCallback((message: ChatMessage) => {
+    setReplyToMessage({
+      id: message.id,
+      content: message.content,
+      authorUsername: message.author.username,
+      createdAt: message.createdAt,
+    });
+  }, []);
 
   const {
     messages,
@@ -62,22 +73,15 @@ export function ChatRoom({
         currentUserId={currentUser.id}
         roomName={room.name}
         typingUsers={typingUsers}
-        onReply={(message) =>
-          setReplyToMessage({
-            id: message.id,
-            content: message.content,
-            authorUsername: message.author.username,
-            createdAt: message.createdAt,
-          })
-        }
+        onReply={handleReply}
       />
 
       {canSendMessages ? (
         <MessageComposer
           roomId={room.id}
           replyToMessage={replyToMessage}
-          onCancelReply={() => setReplyToMessage(null)}
-          onMessageSent={() => setReplyToMessage(null)}
+          onCancelReply={clearReply}
+          onMessageSent={clearReply}
           onTyping={sendTyping}
         />
       ) : (

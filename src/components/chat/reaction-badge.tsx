@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { toast } from "sonner";
 
@@ -13,7 +12,6 @@ type ReactionBadgeProps = {
 };
 
 export function ReactionBadge({ messageId, reaction }: ReactionBadgeProps) {
-  const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
   function toggleReaction() {
@@ -27,8 +25,6 @@ export function ReactionBadge({ messageId, reaction }: ReactionBadgeProps) {
         toast.error(result.error.message);
         return;
       }
-
-      router.refresh();
     });
   }
 

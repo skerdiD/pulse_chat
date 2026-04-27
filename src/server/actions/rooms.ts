@@ -154,7 +154,7 @@ export async function getRoomsForCurrentUser(): Promise<
   const latestMessages =
     visibleMemberRoomIds.length > 0
       ? await db
-          .select({
+          .selectDistinctOn([messages.roomId], {
             id: messages.id,
             roomId: messages.roomId,
             content: messages.content,
@@ -164,7 +164,7 @@ export async function getRoomsForCurrentUser(): Promise<
           .from(messages)
           .leftJoin(profiles, eq(messages.userId, profiles.id))
           .where(inArray(messages.roomId, visibleMemberRoomIds))
-          .orderBy(desc(messages.createdAt))
+          .orderBy(messages.roomId, desc(messages.createdAt))
       : [];
 
   const latestMessageByRoomId = new Map<
