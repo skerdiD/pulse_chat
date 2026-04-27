@@ -107,169 +107,177 @@ export function CreateRoomDialog({
       </button>
 
       {isOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6">
-          <button
-            type="button"
-            aria-label="Close create room dialog"
-            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
-            onClick={closeDialog}
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto px-4 py-4 sm:items-center sm:py-6">
+          <div
+            aria-hidden="true"
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm"
           />
 
-          <div className="relative w-full max-w-lg overflow-hidden rounded-[2rem] border border-slate-800/90 bg-slate-950 p-6 text-white shadow-2xl shadow-black/50 sm:p-7">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="create-room-title"
+            aria-describedby="create-room-description"
+            className="relative flex max-h-[calc(100dvh-2rem)] w-full max-w-lg flex-col overflow-hidden rounded-[2rem] border border-slate-800/90 bg-slate-950 text-white shadow-2xl shadow-black/50 sm:max-h-[calc(100dvh-3rem)]"
+          >
             <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-purple-300/60 to-transparent" />
 
-            <div className="mb-6 flex items-start justify-between gap-4">
+            <div className="flex shrink-0 items-start justify-between gap-4 px-5 pt-5 pb-4 sm:px-7 sm:pt-7">
               <div>
                 <div className="mb-4 flex size-12 items-center justify-center rounded-2xl border border-purple-400/20 bg-purple-500/10 text-purple-200">
                   <MessageSquarePlus className="size-5" />
                 </div>
 
-                <h2 className="text-2xl font-black tracking-[-0.04em]">
+                <h2
+                  id="create-room-title"
+                  className="text-2xl font-black tracking-[-0.04em]"
+                >
                   Create a room
                 </h2>
 
-                <p className="mt-2 text-sm leading-6 text-slate-400">
+                <p
+                  id="create-room-description"
+                  className="mt-2 text-sm leading-6 text-slate-400"
+                >
                   Create a focused space for your team, project, or community.
                 </p>
               </div>
 
               <button
                 type="button"
+                aria-label="Close create room dialog"
                 onClick={closeDialog}
-                className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-slate-800 bg-slate-950 text-slate-400 transition hover:text-white"
+                disabled={isPending}
+                className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-slate-800 bg-slate-950 text-slate-400 transition hover:border-slate-700 hover:text-white disabled:pointer-events-none disabled:opacity-60"
               >
                 <X className="size-4" />
               </button>
             </div>
 
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-              <div className="space-y-2">
-                <label
-                  htmlFor="room-name"
-                  className="text-sm font-semibold text-slate-200"
-                >
-                  Room name
-                </label>
-
-                <input
-                  id="room-name"
-                  type="text"
-                  placeholder="Design Team"
-                  aria-invalid={Boolean(form.formState.errors.name)}
-                  {...form.register("name")}
-                  className="h-12 w-full rounded-2xl border border-slate-800 bg-slate-950/80 px-4 text-sm font-medium text-white shadow-inner outline-none transition placeholder:text-slate-600 focus:border-purple-400 focus:ring-4 focus:ring-purple-500/15"
-                />
-
-                {form.formState.errors.name?.message ? (
-                  <p className="text-sm font-medium text-red-300">
-                    {form.formState.errors.name.message}
-                  </p>
-                ) : null}
-              </div>
-
-              <div className="space-y-2">
-                <label
-                  htmlFor="room-description"
-                  className="text-sm font-semibold text-slate-200"
-                >
-                  Description
-                </label>
-
-                <textarea
-                  id="room-description"
-                  rows={3}
-                  placeholder="Discuss product updates, ideas, and decisions..."
-                  aria-invalid={Boolean(form.formState.errors.description)}
-                  {...form.register("description")}
-                  className="w-full resize-none rounded-2xl border border-slate-800 bg-slate-950/80 px-4 py-3 text-sm font-medium text-white shadow-inner outline-none transition placeholder:text-slate-600 focus:border-purple-400 focus:ring-4 focus:ring-purple-500/15"
-                />
-
-                {form.formState.errors.description?.message ? (
-                  <p className="text-sm font-medium text-red-300">
-                    {form.formState.errors.description.message}
-                  </p>
-                ) : null}
-              </div>
-
-              <div className="space-y-3">
-                <p className="text-sm font-semibold text-slate-200">
-                  Visibility
-                </p>
-
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <button
-                    type="button"
-                    onClick={() => form.setValue("visibility", "public")}
-                    className={
-                      visibility === "public"
-                        ? "rounded-2xl border border-purple-400/40 bg-purple-500/15 p-4 text-left shadow-lg shadow-purple-500/10"
-                        : "rounded-2xl border border-slate-800 bg-slate-950/80 p-4 text-left transition hover:border-slate-700"
-                    }
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="min-h-0 flex-1 overflow-y-auto px-5 pb-5 sm:px-7 sm:pb-7"
+            >
+              <div className="space-y-5">
+                <div className="space-y-2">
+                  <label
+                    htmlFor="room-name"
+                    className="text-sm font-semibold text-slate-200"
                   >
-                    <Globe2 className="mb-3 size-5 text-emerald-300" />
-                    <p className="text-sm font-black text-white">Public</p>
-                    <p className="mt-1 text-xs leading-5 text-slate-500">
-                      Authenticated users can discover and join.
-                    </p>
-                  </button>
+                    Room name
+                  </label>
 
-                  <button
-                    type="button"
-                    onClick={() => form.setValue("visibility", "private")}
-                    className={
-                      visibility === "private"
-                        ? "rounded-2xl border border-purple-400/40 bg-purple-500/15 p-4 text-left shadow-lg shadow-purple-500/10"
-                        : "rounded-2xl border border-slate-800 bg-slate-950/80 p-4 text-left transition hover:border-slate-700"
-                    }
-                  >
-                    <LockKeyhole className="mb-3 size-5 text-purple-300" />
-                    <p className="text-sm font-black text-white">Private</p>
-                    <p className="mt-1 text-xs leading-5 text-slate-500">
-                      Invite system can be connected later.
+                  <input
+                    id="room-name"
+                    type="text"
+                    placeholder="Design Team"
+                    aria-invalid={Boolean(form.formState.errors.name)}
+                    {...form.register("name")}
+                    className="h-12 w-full rounded-2xl border border-slate-800 bg-slate-950/80 px-4 text-sm font-medium text-white shadow-inner outline-none transition placeholder:text-slate-600 focus:border-purple-400 focus:ring-4 focus:ring-purple-500/15"
+                  />
+
+                  {form.formState.errors.name?.message ? (
+                    <p className="text-sm font-medium text-red-300">
+                      {form.formState.errors.name.message}
                     </p>
-                  </button>
+                  ) : null}
                 </div>
 
-                {form.formState.errors.visibility?.message ? (
-                  <p className="text-sm font-medium text-red-300">
-                    {form.formState.errors.visibility.message}
-                  </p>
-                ) : null}
-              </div>
+                <div className="space-y-2">
+                  <label
+                    htmlFor="room-description"
+                    className="text-sm font-semibold text-slate-200"
+                  >
+                    Description
+                  </label>
 
-              {form.formState.errors.root?.message ? (
-                <div className="rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm font-medium text-red-200">
-                  {form.formState.errors.root.message}
+                  <textarea
+                    id="room-description"
+                    rows={3}
+                    placeholder="Discuss product updates, ideas, and decisions..."
+                    aria-invalid={Boolean(form.formState.errors.description)}
+                    {...form.register("description")}
+                    className="w-full resize-none rounded-2xl border border-slate-800 bg-slate-950/80 px-4 py-3 text-sm font-medium text-white shadow-inner outline-none transition placeholder:text-slate-600 focus:border-purple-400 focus:ring-4 focus:ring-purple-500/15"
+                  />
+
+                  {form.formState.errors.description?.message ? (
+                    <p className="text-sm font-medium text-red-300">
+                      {form.formState.errors.description.message}
+                    </p>
+                  ) : null}
                 </div>
-              ) : null}
 
-              <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
-                <button
-                  type="button"
-                  onClick={closeDialog}
-                  disabled={isPending}
-                  className="inline-flex h-11 items-center justify-center rounded-2xl border border-slate-800 bg-slate-950 px-5 text-sm font-bold text-slate-300 transition hover:text-white disabled:pointer-events-none disabled:opacity-60"
-                >
-                  Cancel
-                </button>
+                <div className="space-y-3">
+                  <p className="text-sm font-semibold text-slate-200">
+                    Visibility
+                  </p>
 
-                <button
-                  type="submit"
-                  disabled={isPending}
-                  className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-gradient-to-br from-purple-500 to-fuchsia-600 px-5 text-sm font-black text-white shadow-xl shadow-purple-500/25 transition hover:-translate-y-0.5 hover:shadow-purple-500/35 disabled:pointer-events-none disabled:translate-y-0 disabled:opacity-70"
-                >
-                  {isPending ? (
-                    <>
-                      <Loader2 className="size-4 animate-spin" />
-                      Creating...
-                    </>
-                  ) : (
-                    <>
-                      <MessageSquarePlus className="size-4" />
-                      Create room
-                    </>
-                  )}
-                </button>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <button
+                      type="button"
+                      onClick={() => form.setValue("visibility", "public")}
+                      className={
+                        visibility === "public"
+                          ? "rounded-2xl border border-purple-400/40 bg-purple-500/15 p-4 text-left shadow-lg shadow-purple-500/10"
+                          : "rounded-2xl border border-slate-800 bg-slate-950/80 p-4 text-left transition hover:border-slate-700"
+                      }
+                    >
+                      <Globe2 className="mb-3 size-5 text-emerald-300" />
+                      <p className="text-sm font-black text-white">Public</p>
+                      <p className="mt-1 text-xs leading-5 text-slate-500">
+                        Authenticated users can discover and join.
+                      </p>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => form.setValue("visibility", "private")}
+                      className={
+                        visibility === "private"
+                          ? "rounded-2xl border border-purple-400/40 bg-purple-500/15 p-4 text-left shadow-lg shadow-purple-500/10"
+                          : "rounded-2xl border border-slate-800 bg-slate-950/80 p-4 text-left transition hover:border-slate-700"
+                      }
+                    >
+                      <LockKeyhole className="mb-3 size-5 text-purple-300" />
+                      <p className="text-sm font-black text-white">Private</p>
+                      <p className="mt-1 text-xs leading-5 text-slate-500">
+                        Invite system can be connected later.
+                      </p>
+                    </button>
+                  </div>
+
+                  {form.formState.errors.visibility?.message ? (
+                    <p className="text-sm font-medium text-red-300">
+                      {form.formState.errors.visibility.message}
+                    </p>
+                  ) : null}
+                </div>
+
+                {form.formState.errors.root?.message ? (
+                  <div className="rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm font-medium text-red-200">
+                    {form.formState.errors.root.message}
+                  </div>
+                ) : null}
+
+                <div className="sticky bottom-0 -mx-5 mt-6 flex border-t border-slate-800/80 bg-slate-950/95 px-5 pt-4 pb-1 backdrop-blur sm:-mx-7 sm:justify-end sm:px-7">
+                  <button
+                    type="submit"
+                    disabled={isPending}
+                    className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-br from-purple-500 to-fuchsia-600 px-5 text-sm font-black text-white shadow-xl shadow-purple-500/25 transition hover:-translate-y-0.5 hover:shadow-purple-500/35 disabled:pointer-events-none disabled:translate-y-0 disabled:opacity-70 sm:w-auto"
+                  >
+                    {isPending ? (
+                      <>
+                        <Loader2 className="size-4 animate-spin" />
+                        Creating...
+                      </>
+                    ) : (
+                      <>
+                        <MessageSquarePlus className="size-4" />
+                        Create room
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             </form>
           </div>
