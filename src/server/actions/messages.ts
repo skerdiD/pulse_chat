@@ -10,6 +10,7 @@ import {
   messages,
   profiles,
   roomMembers,
+  rooms,
 } from "@/db/schema";
 import { sendMessageAj } from "@/lib/arcjet";
 import { getSafeAvatarUrl } from "@/lib/avatar";
@@ -56,7 +57,14 @@ async function isRoomMember(roomId: string, userId: string) {
       id: roomMembers.id,
     })
     .from(roomMembers)
-    .where(and(eq(roomMembers.roomId, roomId), eq(roomMembers.userId, userId)))
+    .innerJoin(rooms, eq(roomMembers.roomId, rooms.id))
+    .where(
+      and(
+        eq(roomMembers.roomId, roomId),
+        eq(roomMembers.userId, userId),
+        eq(rooms.isArchived, false),
+      ),
+    )
     .limit(1);
 
   return Boolean(membership);
@@ -77,7 +85,14 @@ async function getOwnedMessageForMutation(messageId: string, userId: string) {
         eq(roomMembers.userId, userId),
       ),
     )
-    .where(and(eq(messages.id, messageId), eq(messages.userId, userId)))
+    .innerJoin(rooms, eq(messages.roomId, rooms.id))
+    .where(
+      and(
+        eq(messages.id, messageId),
+        eq(messages.userId, userId),
+        eq(rooms.isArchived, false),
+      ),
+    )
     .limit(1);
 
   return message ?? null;

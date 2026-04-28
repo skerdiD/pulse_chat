@@ -702,6 +702,7 @@ export function useRoomRealtime({
     const channel = supabase
       .channel(`room:${roomId}`, {
         config: {
+          private: true,
           broadcast: {
             self: false,
           },

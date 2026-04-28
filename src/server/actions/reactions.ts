@@ -5,7 +5,7 @@ import { request } from "@arcjet/next";
 import { and, eq } from "drizzle-orm";
 
 import { db } from "@/db";
-import { messageReactions, messages, roomMembers } from "@/db/schema";
+import { messageReactions, messages, roomMembers, rooms } from "@/db/schema";
 import { toggleReactionAj } from "@/lib/arcjet";
 import {
   actionError,
@@ -52,7 +52,8 @@ async function getMessageIfUserCanReact(messageId: string, userId: string) {
         eq(roomMembers.userId, userId),
       ),
     )
-    .where(eq(messages.id, messageId))
+    .innerJoin(rooms, eq(messages.roomId, rooms.id))
+    .where(and(eq(messages.id, messageId), eq(rooms.isArchived, false)))
     .limit(1);
 
   return message ?? null;

@@ -240,10 +240,12 @@ export async function getRoomMembersForCurrentUserRoom(
           id: roomMembers.id,
         })
         .from(roomMembers)
+        .innerJoin(rooms, eq(roomMembers.roomId, rooms.id))
         .where(
           and(
             eq(roomMembers.roomId, input.roomId),
             eq(roomMembers.userId, user.id),
+            eq(rooms.isArchived, false),
           ),
         )
         .limit(1);
