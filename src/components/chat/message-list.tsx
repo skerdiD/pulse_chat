@@ -154,9 +154,9 @@ export function MessageList({
       <div
         ref={containerRef}
         onScroll={handleScroll}
-        className="pulse-scrollbar h-full overflow-y-auto px-3 py-4 sm:px-4 lg:px-5"
+        className="pulse-scrollbar h-full overflow-y-auto px-3 py-4 sm:px-4 lg:px-6 xl:px-7"
       >
-        <div className="mx-auto flex w-full max-w-5xl flex-col gap-0.5">
+        <div className="flex w-full flex-col gap-0.5">
           {groupedMessages.map((group) => (
             <section key={group.label} aria-label={group.label}>
               <div className="sticky top-2 z-10 my-3 flex justify-center">

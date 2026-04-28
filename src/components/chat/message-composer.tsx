@@ -170,8 +170,8 @@ export function MessageComposer({
   }
 
   return (
-    <div className="shrink-0 border-t border-slate-800/90 bg-slate-950/78 p-2.5 shadow-xl shadow-black/15 backdrop-blur-xl sm:p-3">
-      <div className="mx-auto w-full max-w-5xl">
+    <div className="shrink-0 border-t border-slate-800/90 bg-slate-950/78 px-2.5 py-2.5 shadow-xl shadow-black/15 backdrop-blur-xl sm:px-3 sm:py-3 lg:px-6 xl:px-7">
+      <div className="w-full">
         {replyToMessage ? (
           <div className="mb-2.5 rounded-xl border border-slate-800 bg-slate-900/70 p-3 shadow-md shadow-black/10">
             <div className="mb-2 flex items-center justify-between gap-3">
