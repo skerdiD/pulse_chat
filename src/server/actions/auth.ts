@@ -91,12 +91,7 @@ export async function syncProfileForUser(user: User) {
       createdAt: now,
       updatedAt: now,
     })
-    .onConflictDoUpdate({
-      target: profiles.id,
-      set: {
-        updatedAt: now,
-      },
-    });
+    .onConflictDoNothing();
 }
 
 export async function loginAction(

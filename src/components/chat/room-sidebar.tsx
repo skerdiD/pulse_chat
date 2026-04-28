@@ -49,8 +49,12 @@ export function RoomSidebar({
   const [query, setQuery] = useState("");
 
   useEffect(() => {
+    if (!isMobileOpen) {
+      return;
+    }
+
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape" && isMobileOpen) {
+      if (event.key === "Escape") {
         onMobileClose();
       }
     }

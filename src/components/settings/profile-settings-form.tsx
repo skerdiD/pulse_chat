@@ -72,7 +72,6 @@ export function ProfileSettingsForm({ currentUser }: ProfileSettingsFormProps) {
 
       toast.success(result.message ?? "Profile updated.");
       router.replace("/chat");
-      router.refresh();
     });
   }
 

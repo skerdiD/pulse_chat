@@ -106,38 +106,10 @@ function getOptimisticMatchScore(
   return diff <= 60_000 ? diff : null;
 }
 
-function buildReactionSummaries(
-  rows: ReactionRow[],
-  currentUserId: string,
+function sortReactionSummaries(
+  reactions: ChatMessageReactionSummary[],
 ): ChatMessageReactionSummary[] {
-  const byEmoji = new Map<
-    string,
-    {
-      emoji: string;
-      count: number;
-      reactedByCurrentUser: boolean;
-    }
-  >();
-
-  for (const row of rows) {
-    const existing =
-      byEmoji.get(row.emoji) ??
-      {
-        emoji: row.emoji,
-        count: 0,
-        reactedByCurrentUser: false,
-      };
-
-    existing.count += 1;
-
-    if (row.user_id === currentUserId) {
-      existing.reactedByCurrentUser = true;
-    }
-
-    byEmoji.set(row.emoji, existing);
-  }
-
-  return Array.from(byEmoji.values()).sort((a, b) => {
+  return [...reactions].sort((a, b) => {
     if (b.count !== a.count) {
       return b.count - a.count;
     }
@@ -512,13 +484,7 @@ export function useRoomRealtime({
             },
           ];
 
-      const sortedNextReactions = [...nextReactions].sort((a, b) => {
-        if (b.count !== a.count) {
-          return b.count - a.count;
-        }
-
-        return a.emoji.localeCompare(b.emoji);
-      });
+      const sortedNextReactions = sortReactionSummaries(nextReactions);
 
       const rollbackReactions = existingMessage.reactions;
 
@@ -604,19 +570,127 @@ export function useRoomRealtime({
     [supabase],
   );
 
-  const fetchReactionSummaries = useCallback(
-    async (messageId: string) => {
-      const { data } = await supabase
-        .from("message_reactions")
-        .select("id, message_id, user_id, emoji, created_at")
-        .eq("message_id", messageId);
+  const applyReactionEventToMessage = useCallback(
+    ({
+      messageId,
+      emoji,
+      userId,
+      eventType,
+    }: {
+      messageId: string;
+      emoji: string;
+      userId: string;
+      eventType: "INSERT" | "DELETE";
+    }) => {
+      const existingMessage = messageByIdRef.current.get(messageId);
 
-      return buildReactionSummaries(
-        (data ?? []) as ReactionRow[],
-        currentUser.id,
-      );
+      if (!existingMessage || existingMessage.roomId !== roomId) {
+        return;
+      }
+
+      setRealtimeMessages((currentMessages) => {
+        const currentOverride = currentMessages.find(
+          (message) => message.id === messageId,
+        );
+        const baseMessage = currentOverride ?? existingMessage;
+        const existingReaction = baseMessage.reactions.find(
+          (reaction) => reaction.emoji === emoji,
+        );
+
+        let nextReactions = baseMessage.reactions;
+
+        if (eventType === "INSERT") {
+          if (existingReaction) {
+            if (
+              userId === currentUser.id &&
+              existingReaction.reactedByCurrentUser
+            ) {
+              return currentMessages;
+            }
+
+            nextReactions = baseMessage.reactions.map((reaction) =>
+              reaction.emoji === emoji
+                ? {
+                    ...reaction,
+                    count: reaction.count + 1,
+                    reactedByCurrentUser:
+                      reaction.reactedByCurrentUser || userId === currentUser.id,
+                  }
+                : reaction,
+            );
+          } else {
+            nextReactions = [
+              ...baseMessage.reactions,
+              {
+                emoji,
+                count: 1,
+                reactedByCurrentUser: userId === currentUser.id,
+              },
+            ];
+          }
+        }
+
+        if (eventType === "DELETE") {
+          if (!existingReaction) {
+            return currentMessages;
+          }
+
+          if (
+            userId === currentUser.id &&
+            !existingReaction.reactedByCurrentUser
+          ) {
+            return currentMessages;
+          }
+
+          nextReactions = baseMessage.reactions
+            .map((reaction) => {
+              if (reaction.emoji !== emoji) {
+                return reaction;
+              }
+
+              const nextCount = reaction.count - 1;
+
+              if (nextCount <= 0) {
+                return null;
+              }
+
+              return {
+                ...reaction,
+                count: nextCount,
+                reactedByCurrentUser:
+                  userId === currentUser.id
+                    ? false
+                    : reaction.reactedByCurrentUser,
+              };
+            })
+            .filter(
+              (
+                reaction,
+              ): reaction is ChatMessageReactionSummary => reaction !== null,
+            );
+        }
+
+        const sortedReactions = sortReactionSummaries(nextReactions);
+
+        if (areReactionSummariesEqual(baseMessage.reactions, sortedReactions)) {
+          return currentMessages;
+        }
+
+        const updatedMessage = {
+          ...baseMessage,
+          reactions: sortedReactions,
+        };
+
+        if (!currentOverride) {
+          return sortMessagesByCreatedAt([...currentMessages, updatedMessage]);
+        }
+
+        return currentMessages.map((message) =>
+          message.id === messageId ? updatedMessage : message,
+        );
+      });
     },
-    [currentUser.id, supabase],
+    [currentUser.id, roomId],
   );
 
   const fetchReplyPreview = useCallback(
@@ -687,51 +761,6 @@ export function useRoomRealtime({
       };
     },
     [fetchProfile, fetchReplyPreview],
-  );
-
-  const updateMessageReactions = useCallback(
-    async (messageId: string) => {
-      const existingMessage = messageByIdRef.current.get(messageId);
-
-      if (!existingMessage) {
-        return;
-      }
-
-      if (existingMessage.roomId !== roomId) {
-        return;
-      }
-
-      const reactions = await fetchReactionSummaries(messageId);
-
-      setRealtimeMessages((currentMessages) => {
-        const currentOverride = currentMessages.find(
-          (message) => message.id === messageId,
-        );
-        const baseMessage = currentOverride ?? existingMessage;
-
-        if (areReactionSummariesEqual(baseMessage.reactions, reactions)) {
-          return currentMessages;
-        }
-
-        const updatedMessage = {
-          ...baseMessage,
-          reactions,
-        };
-
-        if (!currentOverride) {
-          return sortMessagesByCreatedAt([...currentMessages, updatedMessage]);
-        }
-
-        return currentMessages.map((message) => {
-          if (message.id !== messageId) {
-            return message;
-          }
-
-          return updatedMessage;
-        });
-      });
-    },
-    [fetchReactionSummaries, roomId],
   );
 
   const sendTyping = useCallback(() => {
@@ -888,17 +917,26 @@ export function useRoomRealtime({
           schema: "public",
           table: "message_reactions",
         },
-        async (payload) => {
+        (payload) => {
           const nextRow = payload.new as Partial<ReactionRow>;
           const previousRow = payload.old as Partial<ReactionRow>;
           const messageId = nextRow.message_id ?? previousRow.message_id;
+          const emoji = nextRow.emoji ?? previousRow.emoji;
+          const userId = nextRow.user_id ?? previousRow.user_id;
 
-          if (!isActive || !messageId) {
+          if (!isActive || !messageId || !emoji || !userId) {
             return;
           }
 
           try {
-            await updateMessageReactions(messageId);
+            if (payload.eventType === "INSERT" || payload.eventType === "DELETE") {
+              applyReactionEventToMessage({
+                messageId,
+                emoji,
+                userId,
+                eventType: payload.eventType,
+              });
+            }
           } catch {
             setStatus("error");
           }
@@ -986,7 +1024,7 @@ export function useRoomRealtime({
     roomId,
     serializeMessage,
     supabase,
-    updateMessageReactions,
+    applyReactionEventToMessage,
     upsertRealtimeMessage,
     removeMessage,
   ]);
