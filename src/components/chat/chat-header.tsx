@@ -7,6 +7,7 @@ import {
   UsersRound,
 } from "lucide-react";
 
+import { RoomActionsMenu } from "@/components/chat/room-actions-menu";
 import { ProfileMenu } from "@/components/chat/profile-menu";
 import { RealtimeStatus } from "@/components/chat/realtime-status";
 import type {
@@ -20,6 +21,7 @@ type ChatHeaderProps = {
   currentUser: CurrentChatUser;
   realtimeStatus: RealtimeConnectionStatus;
   onOpenRooms: () => void;
+  onRoomDeleted: (roomId: string) => void;
 };
 
 export function ChatHeader({
@@ -27,6 +29,7 @@ export function ChatHeader({
   currentUser,
   realtimeStatus,
   onOpenRooms,
+  onRoomDeleted,
 }: ChatHeaderProps) {
   const roleLabel =
     room.currentUserRole === "owner"
@@ -107,6 +110,8 @@ export function ChatHeader({
           <Sparkles className="size-3.5 text-purple-300" />
           Active
         </div>
+
+        <RoomActionsMenu room={room} onDeleted={onRoomDeleted} />
 
         <ProfileMenu currentUser={currentUser} compact />
       </div>

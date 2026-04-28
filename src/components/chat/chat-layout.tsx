@@ -1,10 +1,15 @@
 "use client";
 
-import { useCallback, useState, useSyncExternalStore } from "react";
+import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
+
+import { useRouter } from "next/navigation";
 
 import { Menu } from "lucide-react";
 
 import { ChatEmptyState } from "@/components/chat/chat-empty-state";
+import {
+  getNextRoomIdAfterDeletion,
+} from "@/components/chat/room-deletion";
 import { ChatRoom } from "@/components/chat/chat-room";
 import { RoomSidebar } from "@/components/chat/room-sidebar";
 import type {
@@ -70,7 +75,14 @@ export function ChatLayout({
   messages,
   currentUser,
 }: ChatLayoutProps) {
+  const router = useRouter();
   const [isMobileRoomsOpen, setIsMobileRoomsOpen] = useState(false);
+  const [deletedRoomIds, setDeletedRoomIds] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const [hiddenActiveRoomId, setHiddenActiveRoomId] = useState<string | null>(
+    null,
+  );
   const isDesktopSidebarCollapsed = useSyncExternalStore(
     subscribeToSidebarPreference,
     getStoredSidebarCollapsed,
@@ -101,13 +113,52 @@ export function ChatLayout({
     setDesktopSidebarCollapsed(!isDesktopSidebarCollapsed);
   }, [isDesktopSidebarCollapsed, setDesktopSidebarCollapsed]);
 
-  const activeRoom = rooms.find((room) => room.id === activeRoomId) ?? null;
+  const roomList = useMemo(
+    () => rooms.filter((room) => !deletedRoomIds.has(room.id)),
+    [deletedRoomIds, rooms],
+  );
+  const currentActiveRoomId =
+    activeRoomId === hiddenActiveRoomId ? null : activeRoomId;
+
+  const handleRoomDeleted = useCallback(
+    (deletedRoomId: string) => {
+      setDeletedRoomIds((currentIds) => {
+        if (currentIds.has(deletedRoomId)) {
+          return currentIds;
+        }
+
+        const nextIds = new Set(currentIds);
+        nextIds.add(deletedRoomId);
+        return nextIds;
+      });
+      closeMobileRooms();
+
+      if (activeRoomId !== deletedRoomId) {
+        void router.refresh();
+        return;
+      }
+
+      setHiddenActiveRoomId(deletedRoomId);
+
+      const nextRoomId = getNextRoomIdAfterDeletion(roomList, deletedRoomId);
+
+      if (nextRoomId) {
+        router.replace(`/chat?room=${nextRoomId}`);
+      } else {
+        router.replace("/chat");
+      }
+    },
+    [activeRoomId, closeMobileRooms, roomList, router],
+  );
+
+  const activeRoom =
+    roomList.find((room) => room.id === currentActiveRoomId) ?? null;
 
   return (
     <main className="flex h-dvh min-h-0 overflow-hidden bg-[#050816] text-white">
       <RoomSidebar
-        rooms={rooms}
-        activeRoomId={activeRoomId}
+        rooms={roomList}
+        activeRoomId={currentActiveRoomId}
         isCollapsed={isDesktopSidebarCollapsed}
         isMobileOpen={isMobileRoomsOpen}
         onMobileClose={closeMobileRooms}
@@ -123,6 +174,7 @@ export function ChatLayout({
             currentUser={currentUser}
             canSendMessages={activeRoom.isMember}
             onOpenRooms={openMobileRooms}
+            onRoomDeleted={handleRoomDeleted}
           />
         ) : (
           <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">

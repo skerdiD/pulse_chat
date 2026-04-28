@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   addRoomMemberSchema,
   createRoomSchema,
+  deleteRoomSchema,
   messageIdSchema,
   removeRoomMemberSchema,
   roomIdSchema,
@@ -238,6 +239,24 @@ describe("chat validators", () => {
       const result = updateMessageSchema.safeParse({
         messageId: validMessageId,
         content: "a".repeat(2001)
+      });
+
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe("deleteRoomSchema", () => {
+    it("accepts valid room deletion input", () => {
+      const result = deleteRoomSchema.safeParse({
+        roomId: validRoomId
+      });
+
+      expect(result.success).toBe(true);
+    });
+
+    it("rejects invalid room deletion input", () => {
+      const result = deleteRoomSchema.safeParse({
+        roomId: "bad-room-id"
       });
 
       expect(result.success).toBe(false);

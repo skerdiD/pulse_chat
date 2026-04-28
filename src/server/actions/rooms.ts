@@ -18,9 +18,11 @@ import {
 } from "@/server/actions/utils";
 import {
   createRoomSchema,
+  deleteRoomSchema,
   joinRoomSchema,
   roomIdSchema,
   type CreateRoomInput,
+  type DeleteRoomInput,
   type JoinRoomInput,
 } from "@/server/validators/chat";
 import type { ChatRoom, ChatRoomMember } from "@/types/chat";
@@ -419,6 +421,72 @@ export async function joinRoomAction(
         return actionError(
           "INTERNAL_ERROR",
           "Unable to join room. Please try again.",
+        );
+      }
+    },
+  );
+}
+
+export async function deleteRoomAction(
+  input: DeleteRoomInput,
+): Promise<ActionResponse<{ roomId: string }>> {
+  return withAuthedValidatedInput(
+    deleteRoomSchema,
+    input,
+    async ({ input, user }) => {
+      const [room] = await db
+        .select({
+          id: rooms.id,
+          ownerId: rooms.ownerId,
+          isArchived: rooms.isArchived,
+        })
+        .from(rooms)
+        .where(eq(rooms.id, input.roomId))
+        .limit(1);
+
+      if (!room || room.isArchived) {
+        return actionError("NOT_FOUND", "Room was not found.");
+      }
+
+      if (room.ownerId !== user.id) {
+        return actionError(
+          "FORBIDDEN",
+          "Only the room owner can delete this room.",
+        );
+      }
+
+      try {
+        const now = new Date();
+        const [deletedRoom] = await db
+          .update(rooms)
+          .set({
+            isArchived: true,
+            updatedAt: now,
+          })
+          .where(and(eq(rooms.id, input.roomId), eq(rooms.ownerId, user.id)))
+          .returning({
+            id: rooms.id,
+          });
+
+        if (!deletedRoom) {
+          return actionError(
+            "NOT_FOUND",
+            "Room was not found or was already deleted.",
+          );
+        }
+
+        revalidatePath("/chat");
+
+        return actionSuccess(
+          {
+            roomId: deletedRoom.id,
+          },
+          "Room deleted successfully.",
+        );
+      } catch {
+        return actionError(
+          "INTERNAL_ERROR",
+          "Unable to delete room. Please try again.",
         );
       }
     },

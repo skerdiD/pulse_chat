@@ -21,6 +21,7 @@ type ChatRoomProps = {
   currentUser: CurrentChatUser;
   canSendMessages: boolean;
   onOpenRooms: () => void;
+  onRoomDeleted: (roomId: string) => void;
 };
 
 export function ChatRoom({
@@ -29,6 +30,7 @@ export function ChatRoom({
   currentUser,
   canSendMessages,
   onOpenRooms,
+  onRoomDeleted,
 }: ChatRoomProps) {
   const [replyToMessage, setReplyToMessage] =
     useState<ChatMessageReplyPreview | null>(null);
@@ -71,6 +73,7 @@ export function ChatRoom({
         currentUser={currentUser}
         realtimeStatus={realtimeStatus}
         onOpenRooms={onOpenRooms}
+        onRoomDeleted={onRoomDeleted}
       />
 
       <MessageList
