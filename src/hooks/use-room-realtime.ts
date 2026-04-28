@@ -461,6 +461,88 @@ export function useRoomRealtime({
     [upsertRealtimeMessage],
   );
 
+  const toggleMessageReactionOptimistically = useCallback(
+    (messageId: string, emoji: string) => {
+      const existingMessage = messageByIdRef.current.get(messageId);
+
+      if (!existingMessage || existingMessage.roomId !== roomId) {
+        return null;
+      }
+
+      const existingReaction = existingMessage.reactions.find(
+        (reaction) => reaction.emoji === emoji,
+      );
+
+      const nextReactions = existingReaction
+        ? existingMessage.reactions
+            .map((reaction) => {
+              if (reaction.emoji !== emoji) {
+                return reaction;
+              }
+
+              if (reaction.reactedByCurrentUser) {
+                const nextCount = reaction.count - 1;
+
+                return nextCount > 0
+                  ? {
+                      ...reaction,
+                      count: nextCount,
+                      reactedByCurrentUser: false,
+                    }
+                  : null;
+              }
+
+              return {
+                ...reaction,
+                count: reaction.count + 1,
+                reactedByCurrentUser: true,
+              };
+            })
+            .filter(
+              (
+                reaction,
+              ): reaction is ChatMessageReactionSummary => reaction !== null,
+            )
+        : [
+            ...existingMessage.reactions,
+            {
+              emoji,
+              count: 1,
+              reactedByCurrentUser: true,
+            },
+          ];
+
+      const sortedNextReactions = [...nextReactions].sort((a, b) => {
+        if (b.count !== a.count) {
+          return b.count - a.count;
+        }
+
+        return a.emoji.localeCompare(b.emoji);
+      });
+
+      const rollbackReactions = existingMessage.reactions;
+
+      upsertRealtimeMessage({
+        ...existingMessage,
+        reactions: sortedNextReactions,
+      });
+
+      return () => {
+        const currentMessage = messageByIdRef.current.get(messageId);
+
+        if (!currentMessage) {
+          return;
+        }
+
+        upsertRealtimeMessage({
+          ...currentMessage,
+          reactions: rollbackReactions,
+        });
+      };
+    },
+    [roomId, upsertRealtimeMessage],
+  );
+
   const removeMessage = useCallback((messageId: string) => {
     deletedMessageIdsRef.current.add(messageId);
 
@@ -918,6 +1000,7 @@ export function useRoomRealtime({
     confirmOptimisticMessage,
     failOptimisticMessage,
     applyMessageUpdate,
+    toggleMessageReactionOptimistically,
     removeMessage,
   };
 }

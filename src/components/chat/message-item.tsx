@@ -29,6 +29,7 @@ type MessageItemProps = {
     messageId: string,
     updates: Pick<ChatMessage, "content" | "isEdited" | "updatedAt">,
   ) => void;
+  onReactionToggle: (messageId: string, emoji: string) => (() => void) | null;
   onMessageDeleted: (messageId: string) => void;
 };
 
@@ -37,6 +38,7 @@ export const MessageItem = memo(function MessageItem({
   isOwnMessage,
   onReply,
   onMessageUpdated,
+  onReactionToggle,
   onMessageDeleted,
 }: MessageItemProps) {
   const router = useRouter();
@@ -44,17 +46,7 @@ export const MessageItem = memo(function MessageItem({
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(message.content);
   const [isPending, startTransition] = useTransition();
-  const reactions = useMemo(
-    () =>
-      [...message.reactions].sort((a, b) => {
-        if (b.count !== a.count) {
-          return b.count - a.count;
-        }
-
-        return a.emoji.localeCompare(b.emoji);
-      }),
-    [message.reactions],
-  );
+  const reactions = useMemo(() => message.reactions, [message.reactions]);
   const isTransientMessage = Boolean(message.sendStatus);
   const isSending = message.sendStatus === "sending";
   const isFailed = message.sendStatus === "failed";
@@ -267,6 +259,7 @@ export const MessageItem = memo(function MessageItem({
                   key={reaction.emoji}
                   messageId={message.id}
                   reaction={reaction}
+                  onToggleReaction={onReactionToggle}
                 />
               ))}
             </div>
@@ -280,6 +273,7 @@ export const MessageItem = memo(function MessageItem({
             canModify={isOwnMessage}
             onReply={onReply}
             onEdit={startEditing}
+            onReactionToggle={onReactionToggle}
             onDeleted={onMessageDeleted}
             variant="desktop"
           />
@@ -293,6 +287,7 @@ export const MessageItem = memo(function MessageItem({
           canModify={isOwnMessage}
           onReply={onReply}
           onEdit={startEditing}
+          onReactionToggle={onReactionToggle}
           onDeleted={onMessageDeleted}
           variant="mobile"
         />

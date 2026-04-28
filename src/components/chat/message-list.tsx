@@ -19,6 +19,7 @@ type MessageListProps = {
     messageId: string,
     updates: Pick<ChatMessage, "content" | "isEdited" | "updatedAt">,
   ) => void;
+  onReactionToggle: (messageId: string, emoji: string) => (() => void) | null;
   onMessageDeleted: (messageId: string) => void;
 };
 
@@ -61,6 +62,7 @@ export function MessageList({
   isLoading = false,
   onReply,
   onMessageUpdated,
+  onReactionToggle,
   onMessageDeleted,
 }: MessageListProps) {
   const latestMessage = messages.at(-1) ?? null;
@@ -172,6 +174,7 @@ export function MessageList({
                     isOwnMessage={message.userId === currentUserId}
                     onReply={() => onReply(message)}
                     onMessageUpdated={onMessageUpdated}
+                    onReactionToggle={onReactionToggle}
                     onMessageDeleted={onMessageDeleted}
                   />
                 ))}

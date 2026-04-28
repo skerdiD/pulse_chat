@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import {
   Check,
   Copy,
@@ -23,6 +23,7 @@ type MessageActionsProps = {
   canModify: boolean;
   onReply: () => void;
   onEdit: () => void;
+  onReactionToggle: (messageId: string, emoji: string) => (() => void) | null;
   onDeleted: (messageId: string) => void;
   variant?: "desktop" | "mobile";
 };
@@ -33,6 +34,7 @@ export function MessageActions({
   canModify,
   onReply,
   onEdit,
+  onReactionToggle,
   onDeleted,
   variant = "desktop",
 }: MessageActionsProps) {
@@ -88,21 +90,23 @@ export function MessageActions({
     });
   }
 
-  function toggleReaction(emoji: string) {
+  const toggleReaction = useCallback((emoji: string) => {
     startTransition(async () => {
+      const rollback = onReactionToggle(messageId, emoji);
       const result = await toggleReactionAction({
         messageId,
         emoji,
       });
 
       if (!result.ok) {
+        rollback?.();
         toast.error(result.error.message);
         return;
       }
 
       setIsPickerOpen(false);
     });
-  }
+  }, [messageId, onReactionToggle]);
 
   function handleEdit() {
     onEdit();

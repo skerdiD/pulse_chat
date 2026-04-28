@@ -55,6 +55,7 @@ export function ChatRoom({
     confirmOptimisticMessage,
     failOptimisticMessage,
     applyMessageUpdate,
+    toggleMessageReactionOptimistically,
     removeMessage,
   } = useRoomRealtime({
     roomId: room.id,
@@ -79,6 +80,7 @@ export function ChatRoom({
         typingUsers={typingUsers}
         onReply={handleReply}
         onMessageUpdated={applyMessageUpdate}
+        onReactionToggle={toggleMessageReactionOptimistically}
         onMessageDeleted={removeMessage}
       />
 
