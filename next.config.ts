@@ -1,3 +1,4 @@
+import { withSentryConfig } from "@sentry/nextjs";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
@@ -28,4 +29,14 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  org: "skerdi-organization",
+  project: "pulse-chat",
+  silent: !process.env.CI,
+  ...(process.env.SENTRY_AUTH_TOKEN
+    ? {
+        authToken: process.env.SENTRY_AUTH_TOKEN,
+        widenClientFileUpload: true,
+      }
+    : {}),
+});
