@@ -1,6 +1,8 @@
 "use client";
 
+import * as Sentry from "@sentry/nextjs";
 import { AlertTriangle, RefreshCcw } from "lucide-react";
+import { useEffect } from "react";
 
 type ChatErrorProps = {
   error: Error & {
@@ -10,6 +12,10 @@ type ChatErrorProps = {
 };
 
 export default function ChatError({ error, reset }: ChatErrorProps) {
+  useEffect(() => {
+    Sentry.captureException(error);
+  }, [error]);
+
   const supportReference = error.digest ? `Reference: ${error.digest}` : null;
 
   return (

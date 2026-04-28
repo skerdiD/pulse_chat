@@ -63,7 +63,7 @@ export function SignupForm() {
             id="username"
             type="text"
             autoComplete="username"
-            placeholder="Skerdi"
+            placeholder="John"
             aria-invalid={Boolean(form.formState.errors.username)}
             {...form.register("username")}
             className="h-12 w-full rounded-2xl border border-slate-800 bg-slate-950/80 pl-10 pr-4 text-sm font-medium text-white shadow-inner outline-none transition placeholder:text-slate-600 focus:border-purple-400 focus:ring-4 focus:ring-purple-500/15"
