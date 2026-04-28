@@ -3,8 +3,24 @@ import type { ChatRoom } from "@/types/chat";
 type RoomIdentity = Pick<ChatRoom, "id" | "isMember">;
 type RoomDeletionRole = Pick<ChatRoom, "currentUserRole">;
 
-export function canDeleteRoom(room: RoomDeletionRole) {
+export function canManageRoom(room: RoomDeletionRole) {
   return room.currentUserRole === "owner";
+}
+
+export function canDeleteRoom(room: RoomDeletionRole) {
+  return canManageRoom(room);
+}
+
+export function canEditRoom(room: RoomDeletionRole) {
+  return canManageRoom(room);
+}
+
+export function getRoomSettingsHref(roomId: string) {
+  return `/chat/rooms/${roomId}/settings`;
+}
+
+export function getRoomChatHref(roomId: string) {
+  return `/chat?room=${roomId}`;
 }
 
 export function removeRoomFromList<T extends RoomIdentity>(

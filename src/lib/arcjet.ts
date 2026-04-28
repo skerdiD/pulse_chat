@@ -40,6 +40,15 @@ export const profileUpdateAj = aj.withRule(
   }),
 );
 
+export const roomUpdateAj = aj.withRule(
+  fixedWindow({
+    mode: "LIVE",
+    window: "1m",
+    max: 10,
+    characteristics: ["userId"],
+  }),
+);
+
 export const sendMessageAj = aj.withRule(
   fixedWindow({
     mode: "LIVE",

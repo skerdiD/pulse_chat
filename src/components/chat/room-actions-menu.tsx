@@ -1,11 +1,16 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 
-import { MoreHorizontal, Trash2 } from "lucide-react";
+import { PencilLine, Settings, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
-import { canDeleteRoom } from "@/components/chat/room-deletion";
+import {
+  canDeleteRoom,
+  canEditRoom,
+  getRoomSettingsHref,
+} from "@/components/chat/room-deletion";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -19,6 +24,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { deleteRoomAction } from "@/server/actions/rooms";
@@ -33,11 +39,12 @@ export function RoomActionsMenu({
   room,
   onDeleted,
 }: RoomActionsMenuProps) {
+  const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
-  if (!canDeleteRoom(room)) {
+  if (!canEditRoom(room) && !canDeleteRoom(room)) {
     return null;
   }
 
@@ -66,9 +73,9 @@ export function RoomActionsMenu({
           <button
             type="button"
             className="flex size-9 items-center justify-center rounded-lg border border-slate-800 bg-slate-950/70 text-slate-400 transition hover:border-slate-700 hover:bg-slate-900 hover:text-white"
-            aria-label="Open room actions"
+            aria-label="Room settings"
           >
-            <MoreHorizontal className="size-4" />
+            <Settings className="size-4" />
           </button>
         </DropdownMenuTrigger>
 
@@ -76,18 +83,36 @@ export function RoomActionsMenu({
           align="end"
           className="w-48 rounded-xl border border-slate-800 bg-slate-950 p-1.5 text-slate-200 shadow-2xl shadow-black/40 ring-1 ring-slate-800"
         >
-          <DropdownMenuItem
-            variant="destructive"
-            onSelect={(event) => {
-              event.preventDefault();
-              setIsMenuOpen(false);
-              setIsDialogOpen(true);
-            }}
-            className="rounded-lg px-2.5 py-2 text-sm"
-          >
-            <Trash2 className="size-4" />
-            Delete room
-          </DropdownMenuItem>
+          {canEditRoom(room) ? (
+            <DropdownMenuItem
+              onSelect={(event) => {
+                event.preventDefault();
+                setIsMenuOpen(false);
+                router.push(getRoomSettingsHref(room.id));
+              }}
+              className="rounded-lg px-2.5 py-2 text-sm"
+            >
+              <PencilLine className="size-4" />
+              Edit room
+            </DropdownMenuItem>
+          ) : null}
+
+          {canEditRoom(room) && canDeleteRoom(room) ? <DropdownMenuSeparator className="bg-slate-800" /> : null}
+
+          {canDeleteRoom(room) ? (
+            <DropdownMenuItem
+              variant="destructive"
+              onSelect={(event) => {
+                event.preventDefault();
+                setIsMenuOpen(false);
+                setIsDialogOpen(true);
+              }}
+              className="rounded-lg px-2.5 py-2 text-sm"
+            >
+              <Trash2 className="size-4" />
+              Delete room
+            </DropdownMenuItem>
+          ) : null}
         </DropdownMenuContent>
       </DropdownMenu>
 

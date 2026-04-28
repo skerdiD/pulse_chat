@@ -6,7 +6,7 @@ import { and, count, desc, eq, inArray, or } from "drizzle-orm";
 
 import { db } from "@/db";
 import { messages, profiles, roomMembers, rooms } from "@/db/schema";
-import { createRoomAj, joinRoomAj } from "@/lib/arcjet";
+import { createRoomAj, joinRoomAj, roomUpdateAj } from "@/lib/arcjet";
 import { getSafeAvatarUrl } from "@/lib/avatar";
 import { formatRoomPreviewTime } from "@/lib/format";
 import {
@@ -21,9 +21,11 @@ import {
   deleteRoomSchema,
   joinRoomSchema,
   roomIdSchema,
+  updateRoomSchema,
   type CreateRoomInput,
   type DeleteRoomInput,
   type JoinRoomInput,
+  type UpdateRoomInput,
 } from "@/server/validators/chat";
 import type { ChatRoom, ChatRoomMember } from "@/types/chat";
 
@@ -72,6 +74,26 @@ async function protectJoinRoomAction(userId: string) {
       return actionError(
         "RATE_LIMITED",
         "You are joining rooms too fast. Please wait a moment and try again.",
+      );
+    }
+
+    return actionSuccess(undefined);
+  } catch {
+    return actionSuccess(undefined);
+  }
+}
+
+async function protectRoomUpdateAction(userId: string) {
+  try {
+    const req = await request();
+    const decision = await roomUpdateAj.protect(req, {
+      userId,
+    });
+
+    if (decision.isDenied()) {
+      return actionError(
+        "RATE_LIMITED",
+        "You are updating room settings too fast. Please wait a moment and try again.",
       );
     }
 
@@ -421,6 +443,88 @@ export async function joinRoomAction(
         return actionError(
           "INTERNAL_ERROR",
           "Unable to join room. Please try again.",
+        );
+      }
+    },
+  );
+}
+
+export async function updateRoomAction(
+  input: UpdateRoomInput,
+): Promise<ActionResponse<{ roomId: string }>> {
+  return withAuthedValidatedInput(
+    updateRoomSchema,
+    input,
+    async ({ input, user }) => {
+      const arcjetDecision = await protectRoomUpdateAction(user.id);
+
+      if (!arcjetDecision.ok) {
+        return arcjetDecision;
+      }
+
+      const [room] = await db
+        .select({
+          id: rooms.id,
+          ownerId: rooms.ownerId,
+          isArchived: rooms.isArchived,
+          name: rooms.name,
+          description: rooms.description,
+          visibility: rooms.visibility,
+        })
+        .from(rooms)
+        .where(eq(rooms.id, input.roomId))
+        .limit(1);
+
+      if (!room || room.isArchived) {
+        return actionError("NOT_FOUND", "Room was not found.");
+      }
+
+      if (room.ownerId !== user.id) {
+        return actionError(
+          "FORBIDDEN",
+          "Only the room owner can edit this room.",
+        );
+      }
+
+      const nextName = input.name ?? room.name;
+      const nextDescription = input.description ?? null;
+      const nextVisibility = input.visibility ?? room.visibility;
+      const now = new Date();
+
+      try {
+        const [updatedRoom] = await db
+          .update(rooms)
+          .set({
+            name: nextName,
+            description: nextDescription,
+            visibility: nextVisibility,
+            updatedAt: now,
+          })
+          .where(and(eq(rooms.id, input.roomId), eq(rooms.ownerId, user.id)))
+          .returning({
+            id: rooms.id,
+          });
+
+        if (!updatedRoom) {
+          return actionError(
+            "NOT_FOUND",
+            "Room was not found or could not be updated.",
+          );
+        }
+
+        revalidatePath("/chat");
+        revalidatePath(`/chat/rooms/${updatedRoom.id}/settings`);
+
+        return actionSuccess(
+          {
+            roomId: updatedRoom.id,
+          },
+          "Room updated successfully.",
+        );
+      } catch {
+        return actionError(
+          "INTERNAL_ERROR",
+          "Unable to update room. Please try again.",
         );
       }
     },

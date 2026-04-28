@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  canEditRoom,
   canDeleteRoom,
+  getRoomChatHref,
+  getRoomSettingsHref,
   getNextRoomIdAfterDeletion,
   removeRoomFromList,
 } from "@/components/chat/room-deletion";
@@ -36,6 +39,18 @@ describe("room deletion helpers", () => {
       false,
     );
     expect(canDeleteRoom(createRoom({ currentUserRole: null }))).toBe(false);
+  });
+
+  it("uses the same owner-only rule for room editing", () => {
+    expect(canEditRoom(createRoom({ currentUserRole: "owner" }))).toBe(true);
+    expect(canEditRoom(createRoom({ currentUserRole: "admin" }))).toBe(false);
+  });
+
+  it("builds chat and settings routes for a room", () => {
+    expect(getRoomChatHref("room-123")).toBe("/chat?room=room-123");
+    expect(getRoomSettingsHref("room-123")).toBe(
+      "/chat/rooms/room-123/settings",
+    );
   });
 
   it("picks a safe next room after deleting the active room", () => {
