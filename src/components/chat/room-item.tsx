@@ -14,16 +14,39 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 import { joinRoomAction } from "@/server/actions/rooms";
 import type { ChatRoom } from "@/types/chat";
 
 type RoomItemProps = {
   room: ChatRoom;
   isActive: boolean;
+  collapsed?: boolean;
   onNavigate?: () => void;
 };
 
-export function RoomItem({ room, isActive, onNavigate }: RoomItemProps) {
+function getRoomInitials(name: string) {
+  const initials = name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
+
+  return initials || "#";
+}
+
+export function RoomItem({
+  room,
+  isActive,
+  collapsed = false,
+  onNavigate,
+}: RoomItemProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
@@ -46,6 +69,115 @@ export function RoomItem({ room, isActive, onNavigate }: RoomItemProps) {
   }
 
   const latestTime = room.latestMessagePreview?.timeLabel ?? "";
+  const roomInitials = getRoomInitials(room.name);
+  const collapsedSummary = room.isMember
+    ? `${room.memberCount} ${room.memberCount === 1 ? "member" : "members"}`
+    : room.visibility === "public"
+      ? "Public room, join to chat"
+      : "Private room";
+
+  if (collapsed) {
+    const collapsedBadge =
+      room.visibility === "private" ? (
+        <LockKeyhole className="size-2.5" />
+      ) : isPending ? (
+        <Loader2 className="size-2.5 animate-spin" />
+      ) : room.isMember ? (
+        <Globe2 className="size-2.5" />
+      ) : (
+        <LogIn className="size-2.5" />
+      );
+
+    const collapsedContent = (
+      <div
+        className={cn(
+          "group relative flex h-14 w-full items-center justify-center rounded-2xl border text-left transition",
+          isActive
+            ? "border-slate-700/90 bg-slate-900/90 shadow-lg shadow-black/20 ring-1 ring-inset ring-slate-600/60"
+            : "border-transparent bg-transparent hover:border-slate-800 hover:bg-slate-900/70",
+        )}
+      >
+        {isActive ? (
+          <span className="absolute left-1.5 top-1/2 h-8 w-1 -translate-y-1/2 rounded-full bg-emerald-400" />
+        ) : null}
+
+        <div
+          className={cn(
+            "relative flex size-10 items-center justify-center rounded-xl border text-xs font-semibold uppercase tracking-[0.16em]",
+            isActive
+              ? "border-slate-700 bg-slate-800 text-white"
+              : "border-slate-800 bg-slate-900/80 text-slate-200",
+          )}
+        >
+          {roomInitials}
+
+          <span
+            className={cn(
+              "absolute -bottom-1 -right-1 flex size-5 items-center justify-center rounded-full border shadow-lg shadow-black/30",
+              room.visibility === "private"
+                ? "border-slate-800 bg-slate-950 text-purple-200"
+                : room.isMember
+                  ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-200"
+                  : "border-slate-700 bg-slate-950 text-slate-200",
+            )}
+            aria-hidden="true"
+          >
+            {collapsedBadge}
+          </span>
+        </div>
+
+        <span className="sr-only">{room.name}</span>
+      </div>
+    );
+
+    const tooltip = (
+      <Tooltip>
+        <TooltipTrigger asChild>{collapsedContent}</TooltipTrigger>
+        <TooltipContent side="right" sideOffset={12}>
+          <div className="space-y-1">
+            <p className="text-sm font-semibold text-white">{room.name}</p>
+            <p className="text-xs text-slate-300">{collapsedSummary}</p>
+          </div>
+        </TooltipContent>
+      </Tooltip>
+    );
+
+    if (room.isMember) {
+      return (
+        <Link
+          href={`/chat?room=${room.id}`}
+          onClick={onNavigate}
+          aria-current={isActive ? "page" : undefined}
+          aria-label={room.name}
+          className="block"
+          title={room.name}
+        >
+          {tooltip}
+        </Link>
+      );
+    }
+
+    if (room.visibility === "public") {
+      return (
+        <button
+          type="button"
+          onClick={joinRoom}
+          disabled={isPending}
+          aria-label={`Join ${room.name}`}
+          className="block w-full disabled:pointer-events-none"
+          title={`Join ${room.name}`}
+        >
+          {tooltip}
+        </button>
+      );
+    }
+
+    return (
+      <div aria-label={room.name} className="block" title={room.name}>
+        {tooltip}
+      </div>
+    );
+  }
 
   const content = (
     <div
