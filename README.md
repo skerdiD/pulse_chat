@@ -350,21 +350,6 @@ The strongest business value is not only the chat feature itself, but the system
 
 ---
 
-## Future Improvements
-
-Possible improvements that could extend Pulse Chat into a larger communication product:
-
-* Direct messages between users
-* File and image attachments
-* Unread message counts
-* Room invitations
-* Message search
-* Pinned messages
-* Notifications
-* Advanced member roles
-* Workspace/team support
-* Admin dashboard for room and user management
-
 ## Author
 
 Built by **skerdiD**.
