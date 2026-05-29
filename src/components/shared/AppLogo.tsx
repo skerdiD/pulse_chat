@@ -1,3 +1,5 @@
+import { useId } from "react";
+
 import { cn } from "@/lib/utils";
 
 type AppLogoProps = {
@@ -5,6 +7,9 @@ type AppLogoProps = {
 };
 
 export function PulseLogoMark({ className }: { className?: string }) {
+  const shellGradientId = `pulse-logo-shell-${useId().replace(/:/g, "")}`;
+  const lineGradientId = `pulse-logo-line-${useId().replace(/:/g, "")}`;
+
   return (
     <svg
       viewBox="0 0 40 40"
@@ -13,12 +18,12 @@ export function PulseLogoMark({ className }: { className?: string }) {
       className={cn("size-10", className)}
     >
       <defs>
-        <linearGradient id="pulse-logo-shell" x1="6" y1="5" x2="34" y2="35">
+        <linearGradient id={shellGradientId} x1="6" y1="5" x2="34" y2="35">
           <stop offset="0" stopColor="#8b5cf6" />
           <stop offset="0.58" stopColor="#6d28d9" />
           <stop offset="1" stopColor="#111827" />
         </linearGradient>
-        <linearGradient id="pulse-logo-line" x1="11" y1="20" x2="30" y2="20">
+        <linearGradient id={lineGradientId} x1="11" y1="20" x2="30" y2="20">
           <stop offset="0" stopColor="#a7f3d0" />
           <stop offset="1" stopColor="#34d399" />
         </linearGradient>
@@ -30,7 +35,7 @@ export function PulseLogoMark({ className }: { className?: string }) {
         width="38"
         height="38"
         rx="13"
-        fill="url(#pulse-logo-shell)"
+        fill={`url(#${shellGradientId})`}
       />
       <rect
         x="1.5"
@@ -51,7 +56,7 @@ export function PulseLogoMark({ className }: { className?: string }) {
       <path
         d="M11 21h4.12l2.05-4.78 3.35 9.3 2.24-5.27h6.24"
         fill="none"
-        stroke="url(#pulse-logo-line)"
+        stroke={`url(#${lineGradientId})`}
         strokeWidth="2.35"
         strokeLinecap="round"
         strokeLinejoin="round"

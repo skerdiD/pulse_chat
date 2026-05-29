@@ -8,7 +8,13 @@ export const metadata: Metadata = {
   description:
     "Pulse Chat is a premium real-time room-based chat app for teams, creators, and small communities.",
   icons: {
-    icon: "/icon.svg",
+    icon: [
+      {
+        url: "/icon.svg?v=pulse",
+        type: "image/svg+xml",
+      },
+    ],
+    shortcut: "/icon.svg?v=pulse",
   },
 };
 

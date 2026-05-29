@@ -1,131 +1,127 @@
 # Pulse Chat
 
 **Pulse Chat** is a production-style realtime team messaging app built with **Next.js 16**, **React 19**, **TypeScript**, **Supabase Auth**, **Supabase Realtime**, **Supabase Postgres**, **Drizzle ORM**, and a polished dark SaaS interface.
-
-It demonstrates authentication, room-based permissions, realtime messaging, replies, emoji reactions, typing indicators, profile management, protected server actions, validation, testing, observability, and production-minded UI/UX.
-
-[Live Demo](https://pulse-chat-seven.vercel.app/) · [Repository](https://github.com/skerdiD/pulse_chat) · [Features](#features) · [Tech Stack](#tech-stack) · [Getting Started](#getting-started)
+It demonstrates authentication, public and private rooms, role-based permissions, private room member management, realtime messaging, replies, emoji reactions, typing indicators, unread counts, message pagination, protected server actions, validation, testing, observability, and production-minded UI/UX.
+[Live Demo](https://pulse-chat-seven.vercel.app/) | [Repository](https://github.com/skerdiD/pulse_chat) | [Features](#key-features) | [Tech Stack](#tech-stack) | [Getting Started](#getting-started)
 
 ---
 
 ## Preview
 
-### Live App
+Explore the deployed app: [pulse-chat-seven.vercel.app](https://pulse-chat-seven.vercel.app/)
 
-https://pulse-chat-seven.vercel.app/
+### Landing Page
 
-### Marketing Hero
-
-![Pulse Chat marketing hero with chat preview](public/screenshots/marketing-hero-chat-preview.png)
-
-### Feature Grid
-
-![Pulse Chat feature grid section](public/screenshots/marketing-features-grid.png)
-
-### Signup Experience
-
-![Pulse Chat signup page auth shell](public/screenshots/signup-page-auth-shell.png)
-
+<img src="./public/screenshots/marketing-hero-chat-preview.png" alt="Pulse Chat marketing hero with chat preview" width="100%">
+<img src="./public/screenshots/marketing-features-grid.png" alt="Pulse Chat feature grid section" width="100%">
+### Authentication
+<img src="./public/screenshots/signup-page-auth-shell.png" alt="Pulse Chat signup page auth shell" width="100%">
 ### Chat Workspace
-
-![Pulse Chat main chat workspace with sidebar and room conversation](public/screenshots/chat-room-sidebar-layout.png)
-
-### Collapsed Sidebar
-
-![Pulse Chat chat workspace with collapsed sidebar rail](public/screenshots/chat-room-collapsed-sidebar.png)
-
+<img src="./public/screenshots/chat-room-sidebar-layout.png" alt="Pulse Chat main chat workspace with sidebar and room conversation" width="100%">
+<img src="./public/screenshots/chat-room-collapsed-sidebar.png" alt="Pulse Chat chat workspace with collapsed sidebar rail" width="100%">
 ### Room Settings
-
-![Pulse Chat room settings page](public/screenshots/room-settings-page.png)
+<img src="./public/screenshots/room-settings-page.png" alt="Pulse Chat room settings page" width="100%">
 
 ---
 
 ## Overview
 
-Most chat demos stop at a basic message box. Pulse Chat was built to feel closer to a real SaaS communication product.
-
-The app includes authenticated users, public and private rooms, room membership logic, realtime message delivery, typing indicators, emoji reactions, replies, protected server actions, profile settings, testing, and a responsive premium interface.
-
-The goal was not only to build a working chat app, but to show product thinking, user experience, security, realtime behavior, maintainable architecture, and business value.
+Most chat demos stop at a basic message box.
+Pulse Chat was built to feel closer to a real SaaS communication product.
+The app includes authenticated users, public and private rooms, room membership logic, realtime message delivery, typing indicators, emoji reactions, replies, unread counts, paginated message loading, protected server actions, profile settings, testing, and a responsive premium interface.
+The goal was not only to build a working chat app, but to show product thinking, user experience, security, realtime behavior, database modeling, maintainable architecture, and business value.
+Pulse Chat is designed around a simple idea: teams and communities need fast conversations, but private access, roles, permissions, and reliable realtime behavior matter just as much as sending messages.
 
 ---
 
-## Features
+## Key Features
 
 ### Authentication and Profiles
 
-* Email and password authentication with Supabase Auth
-* Protected chat workspace
-* Server-side session handling
-* User profile sync after authentication
-* Profile settings page
-* Username updates
-* Optional avatar URL support
-* Safe avatar URL validation
+* Email/password authentication with Supabase Auth
+* Protected workspace with server-side session handling
+* Automatic user profile sync after authentication
+* Profile settings for username and avatar URL updates
+* Safer avatar URL validation with fallback behavior
+* Avatar fallback with user initials
 
 ### Rooms and Permissions
 
 * Create public and private rooms
-* Join available public rooms
+* Join discoverable public rooms
 * Room sidebar with search, active states, and metadata
 * Owner/member role support
-* Room member tracking
+* Room member tracking through the database
 * Owner-only room management actions
+* Room-scoped authorization checks
 * Archived-room protection logic
-* Room-scoped permission checks
+* Private room access based on membership
 
-### Realtime Chat
+### Private Room Member Management
+
+* Add members to private rooms
+* Remove members from private rooms
+* Allow members to leave rooms
+* Owner/admin style permission checks
+* Duplicate membership protection
+* Unsafe last-owner removal protection
+* Server-side validation for member actions
+* Private access controlled through room membership
+
+### Realtime Messaging
 
 * Send and receive messages in realtime
-* Supabase Realtime subscriptions
-* Room-scoped realtime updates
+* Supabase Realtime room subscriptions
 * Realtime connection status
 * Safe subscription cleanup when switching rooms
-* Optimized message rendering for smoother usage
+* Realtime typing indicators and reaction updates
+* Stable client-side realtime lifecycle
 
 ### Messages and Reactions
 
-* Message author display
-* Avatar and initials fallback
-* Message timestamps
+* Message author display and timestamps
 * Edited message state
 * Reply-to-message support
-* Reply preview in composer
-* Message hover actions
-* Copy message action
-* Add and remove emoji reactions
-* Realtime reaction updates
-* Reaction counts
-* User-aware reaction state
+* Reply preview inside the composer
+* Message hover actions and copy action
+* Emoji reactions with counts and user-aware state
 
-### Typing Indicators
+### Pagination and Unread Counts
 
-* Room-scoped typing indicators
-* Realtime typing broadcasts
-* Cleanup logic to prevent stale typing states
-* Better feedback during active conversations
+* Paginated message loading
+* Cursor-based older message loading
+* Limited default message fetch size
+* Per-user unread message counts
+* Last-read tracking for room members
+* Room list unread indicators
 
-### Security and Validation
+### Security, Testing, and UX
 
 * Server-side authorization checks
-* Room membership checks
-* Owner-only protected actions
 * Zod validation for forms and server actions
-* Arcjet protection for sensitive actions
+* Arcjet protection with safer error handling
+* Sentry logging support
 * Supabase Row Level Security policy support
-* Environment-variable based configuration
-* Private realtime channel support
+* Authorization-focused test coverage
+* Private room and member permission tests
+* Responsive premium dark SaaS interface
 
-### Performance and UX
+---
 
-* Responsive desktop, tablet, and mobile layout
-* Premium dark SaaS interface
-* Loading and pending states
-* Smooth form interactions
-* Optimized room and message rendering
-* Reduced unnecessary UI re-renders
-* Stable realtime subscription cleanup
-* Production build support
+## Recent Engineering Updates
+
+The latest improvements focused on making Pulse Chat feel more like a production-grade realtime product.
+
+* Added message pagination so rooms do not load every message at once
+* Added unread counts using per-user room read state
+* Improved avatar URL validation and fallback behavior
+* Improved Arcjet protection handling with safer error behavior
+* Added stronger authorization/security tests
+* Completed private room member management
+* Added add/remove/leave room member flows
+* Improved private room access protection
+* Added safer last-owner/member management rules
+* Strengthened archived-room protections
 
 ---
 
@@ -146,22 +142,21 @@ The goal was not only to build a working chat app, but to show product thinking,
 
 ### Backend and Database
 
+* Next.js Server Actions
 * Supabase Auth
 * Supabase Postgres
 * Supabase Realtime
 * Drizzle ORM
-* Next.js Server Actions
-* Server-side validation
+* Room membership permissions
+* Typed database schema
+* Cursor-based message queries
+* User-scoped data access
 
-### Security and Observability
+### Security, Observability, and Tooling
 
 * Arcjet
 * Supabase Row Level Security
 * Sentry
-* Environment-based secrets
-
-### Testing and Tooling
-
 * Vitest
 * Playwright
 * ESLint
@@ -173,7 +168,7 @@ The goal was not only to build a working chat app, but to show product thinking,
 
 ## Architecture Overview
 
-Pulse Chat uses a modern full-stack architecture built around the Next.js App Router.
+Pulse Chat uses a modern full-stack architecture built around the Next.js App Router, server actions, Supabase, Drizzle ORM, and Supabase Realtime.
 
 ```txt
 Client UI
@@ -181,46 +176,59 @@ Client UI
   |-- React Components
   |-- Tailwind CSS / shadcn UI
 
+Auth Layer
+  |-- Supabase Authentication
+  |-- Protected Routes
+  |-- Server-Side Session Handling
+
 Server Layer
   |-- Server Actions
   |-- Zod Validation
   |-- Auth Checks
   |-- Permission Checks
   |-- Arcjet Protection
+  |-- Sentry Logging
 
 Database Layer
   |-- Supabase Postgres
   |-- Drizzle ORM
-  |-- Row Level Security
+  |-- Profiles / Rooms / Room Members
+  |-- Messages / Reactions / Read State
 
 Realtime Layer
   |-- Supabase Realtime
   |-- Message Updates
   |-- Reaction Updates
   |-- Typing Broadcasts
+  |-- Room-Scoped Subscriptions
 
 Quality Layer
   |-- ESLint
   |-- TypeScript
   |-- Vitest
   |-- Playwright
-  |-- Sentry
+  |-- GitHub Actions
 ```
 
 The app keeps realtime behavior room-scoped, validates user actions on the server, and protects sensitive flows with authorization checks before writing to the database.
+Private room access is controlled through room membership, unread counts are based on user-specific room read state, and message pagination keeps the chat experience more scalable as rooms grow.
 
 ---
 
 ## Product Flow
 
-1. A user signs up or logs in.
+1. A user signs up or logs in through Supabase Auth.
 2. The app creates or syncs the user profile.
 3. The user enters the protected chat workspace.
-4. The user can create, join, or manage rooms.
-5. Room members can send messages in realtime.
-6. Users can reply, react, copy messages, and see typing indicators.
-7. Profile settings allow username and avatar updates.
-8. Server actions validate and protect important mutations.
+4. The user can create public or private rooms.
+5. Users can join available public rooms.
+6. Private room owners/admins can add members.
+7. Members can access private conversations.
+8. Room members can send realtime messages.
+9. Users can reply, react, copy messages, and see typing indicators.
+10. The app tracks unread messages per user and room.
+11. Users can manage profile settings, username, and avatar URL.
+12. Server actions validate and protect important mutations.
 
 ---
 
@@ -263,6 +271,7 @@ Open the Supabase SQL Editor and apply the policies from:
 
 ```txt
 src/lib/supabase/policies.sql
+```
 
 ### 6. Start the development server
 
@@ -295,17 +304,29 @@ npm run db:studio    # Open Drizzle Studio
 
 ---
 
+## Main Pages
+
+* Landing page for product explanation and CTA
+* Authentication pages for signup and login
+* Protected chat workspace
+* Room conversation page
+* Room sidebar with search and metadata
+* Room settings and member management
+* Profile settings page
+
+---
+
 ## Testing and Quality
 
 Pulse Chat includes a practical quality setup designed to catch issues across the main product flow.
 
-* **Vitest** validates smaller utilities and logic.
-* **Playwright** validates core end-to-end behavior.
-* **TypeScript** catches type-level regressions.
-* **ESLint** keeps code quality consistent.
-* **Production builds** confirm the app can compile for deployment.
-
-Run the full quality suite:
+* Vitest validates utilities, validators, and server-side logic
+* Playwright validates core end-to-end behavior
+* TypeScript catches type-level regressions
+* ESLint keeps code quality consistent
+* Production builds confirm the app can compile successfully
+* Authorization tests protect important room and message rules
+  Run the full quality suite:
 
 ```bash
 npm run test:all
@@ -313,45 +334,34 @@ npm run test:all
 
 ---
 
-## What This Project Demonstrates
+## Business Value
 
-Pulse Chat shows experience with more than basic CRUD development.
-
-It demonstrates:
-
-* Full-stack product architecture
-* Realtime application behavior
-* Authentication and protected routes
-* Database modeling with typed ORM access
-* Server-side validation and authorization
-* Room-based permissions
-* Realtime subscriptions and cleanup
-* UI/UX polish for SaaS-style products
-* Testing and production-readiness
-* Security-focused engineering decisions
+Pulse Chat represents the type of internal communication tool that teams, creators, agencies, students, and online communities often need.
+From a business perspective, this project supports faster team communication, private and public collaboration rooms, real-time customer or member support, lightweight internal messaging, creator community management, scalable message loading, and better user engagement through unread counts.
+The strongest business value is not only the chat feature itself.
+The value is the system behind it: authentication, permissions, realtime updates, member management, unread state, reliable UI, and a structure that can be extended into a real product.
 
 ---
 
-## Business Value
+## Project Highlights
 
-Pulse Chat represents the type of internal communication tool that teams, creators, agencies, and online communities often need.
+Pulse Chat demonstrates:
 
-From a business perspective, this project supports:
-
-* Faster team communication
-* Community-based discussion spaces
-* Private and public collaboration rooms
-* Real-time customer or member support
-* Lightweight internal messaging
-* Creator or agency community management
-* A foundation for a paid SaaS communication product
-
-The strongest business value is not only the chat feature itself, but the system behind it: authentication, permissions, realtime updates, room management, reliable UI, and a structure that can be extended into a real product.
+* Production-style realtime chat architecture
+* Supabase Auth, Postgres, and Realtime integration
+* Drizzle ORM schema modeling
+* Room-based authorization and private member management
+* Secure server actions
+* Message replies, reactions, typing indicators, pagination, and unread counts
+* Avatar validation and safe fallbacks
+* Arcjet protection and Sentry observability
+* Vitest, Playwright, and GitHub Actions
+* Polished SaaS-style interface
+* Strong foundation for a real collaboration product
 
 ---
 
 ## Author
 
 Built by **skerdiD**.
-
 GitHub: [@skerdiD](https://github.com/skerdiD)
