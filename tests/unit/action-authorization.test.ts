@@ -116,9 +116,12 @@ import {
   updateMessageAction,
 } from "@/server/actions/messages";
 import {
+  addRoomMemberAction,
   getRoomsForCurrentUser,
   joinRoomAction,
+  leaveRoomAction,
   markRoomAsReadAction,
+  removeRoomMemberAction,
   updateRoomAction,
 } from "@/server/actions/rooms";
 
@@ -127,6 +130,7 @@ const otherUserId = "22222222-2222-4222-8222-222222222222";
 const privateRoomId = "33333333-3333-4333-8333-333333333333";
 const publicRoomId = "44444444-4444-4444-8444-444444444444";
 const messageId = "55555555-5555-4555-8555-555555555555";
+const membershipId = "66666666-6666-4666-8666-666666666666";
 
 function createUser(id = currentUserId): User {
   return {
@@ -161,6 +165,38 @@ function createRoomRow(
     isArchived: overrides.isArchived ?? false,
     createdAt: overrides.createdAt ?? new Date("2026-05-29T12:00:00.000Z"),
     updatedAt: overrides.updatedAt ?? new Date("2026-05-29T12:00:00.000Z"),
+  };
+}
+
+function createMembershipContext(
+  overrides: Partial<{
+    id: string;
+    roomId: string;
+    userId: string;
+    role: "owner" | "admin" | "member";
+    roomOwnerId: string;
+  }> = {},
+) {
+  return {
+    id: overrides.id ?? membershipId,
+    roomId: overrides.roomId ?? privateRoomId,
+    userId: overrides.userId ?? currentUserId,
+    role: overrides.role ?? "owner",
+    roomOwnerId: overrides.roomOwnerId ?? currentUserId,
+  };
+}
+
+function createMemberRow(
+  overrides: Partial<{
+    id: string;
+    userId: string;
+    role: "owner" | "admin" | "member";
+  }> = {},
+) {
+  return {
+    id: overrides.id ?? membershipId,
+    userId: overrides.userId ?? otherUserId,
+    role: overrides.role ?? "member",
   };
 }
 
@@ -448,5 +484,195 @@ describe("chat action authorization", () => {
     }
 
     expect(mocks.update).not.toHaveBeenCalled();
+  });
+
+  it("allows owners and admins to add a member to a private room", async () => {
+    queueSelectResult([createMembershipContext({ role: "admin" })]);
+    queueSelectResult([
+      {
+        id: otherUserId,
+        username: "Teammate",
+        avatarUrl: null,
+      },
+    ]);
+    queueSelectResult([]);
+    insertResults.push([
+      {
+        id: membershipId,
+        userId: otherUserId,
+        role: "member",
+        joinedAt: new Date("2026-05-29T12:30:00.000Z"),
+      },
+    ]);
+
+    const result = await addRoomMemberAction({
+      roomId: privateRoomId,
+      userId: otherUserId,
+    });
+
+    expect(result.ok).toBe(true);
+
+    if (result.ok) {
+      expect(result.data.member).toEqual(
+        expect.objectContaining({
+          userId: otherUserId,
+          role: "member",
+          username: "Teammate",
+        }),
+      );
+    }
+
+    expect(mocks.insert).toHaveBeenCalledTimes(1);
+    expect(mocks.revalidatePath).toHaveBeenCalledWith("/chat");
+    expect(mocks.revalidatePath).toHaveBeenCalledWith(
+      `/chat/rooms/${privateRoomId}/settings`,
+    );
+  });
+
+  it("prevents normal members from adding another member", async () => {
+    queueSelectResult([createMembershipContext({ role: "member" })]);
+
+    const result = await addRoomMemberAction({
+      roomId: privateRoomId,
+      userId: otherUserId,
+    });
+
+    expect(result.ok).toBe(false);
+
+    if (!result.ok) {
+      expect(result.error.code).toBe("FORBIDDEN");
+    }
+
+    expect(mocks.insert).not.toHaveBeenCalled();
+  });
+
+  it("prevents non-members from adding themselves to a private room", async () => {
+    queueSelectResult([]);
+
+    const result = await addRoomMemberAction({
+      roomId: privateRoomId,
+      userId: currentUserId,
+    });
+
+    expect(result.ok).toBe(false);
+
+    if (!result.ok) {
+      expect(result.error.code).toBe("FORBIDDEN");
+    }
+
+    expect(mocks.insert).not.toHaveBeenCalled();
+  });
+
+  it("handles duplicate room membership safely", async () => {
+    queueSelectResult([createMembershipContext({ role: "owner" })]);
+    queueSelectResult([
+      {
+        id: otherUserId,
+        username: "Teammate",
+        avatarUrl: null,
+      },
+    ]);
+    queueSelectResult([createMemberRow({ userId: otherUserId })]);
+
+    const result = await addRoomMemberAction({
+      roomId: privateRoomId,
+      userId: otherUserId,
+    });
+
+    expect(result.ok).toBe(false);
+
+    if (!result.ok) {
+      expect(result.error.code).toBe("CONFLICT");
+    }
+
+    expect(mocks.insert).not.toHaveBeenCalled();
+  });
+
+  it("blocks member changes in archived rooms", async () => {
+    queueSelectResult([]);
+
+    const result = await addRoomMemberAction({
+      roomId: privateRoomId,
+      userId: otherUserId,
+    });
+
+    expect(result.ok).toBe(false);
+
+    if (!result.ok) {
+      expect(result.error.code).toBe("FORBIDDEN");
+    }
+
+    expect(whereArgs.some((arg) => hasDeepValue(arg, "is_archived"))).toBe(
+      true,
+    );
+    expect(whereArgs.some((arg) => hasDeepValue(arg, false))).toBe(true);
+    expect(mocks.insert).not.toHaveBeenCalled();
+  });
+
+  it("allows owners and admins to remove a member", async () => {
+    queueSelectResult([createMembershipContext({ role: "owner" })]);
+    queueSelectResult([createMemberRow({ userId: otherUserId })]);
+    deleteResults.push([{ roomId: privateRoomId, userId: otherUserId }]);
+
+    const result = await removeRoomMemberAction({
+      roomId: privateRoomId,
+      userId: otherUserId,
+    });
+
+    expect(result.ok).toBe(true);
+    expect(mocks.delete).toHaveBeenCalledTimes(1);
+    expect(mocks.revalidatePath).toHaveBeenCalledWith("/chat");
+  });
+
+  it("prevents normal members from removing another member", async () => {
+    queueSelectResult([createMembershipContext({ role: "member" })]);
+    queueSelectResult([createMemberRow({ userId: otherUserId })]);
+
+    const result = await removeRoomMemberAction({
+      roomId: privateRoomId,
+      userId: otherUserId,
+    });
+
+    expect(result.ok).toBe(false);
+
+    if (!result.ok) {
+      expect(result.error.code).toBe("FORBIDDEN");
+    }
+
+    expect(mocks.delete).not.toHaveBeenCalled();
+  });
+
+  it("allows a member to leave a room", async () => {
+    queueSelectResult([createMembershipContext({ role: "member" })]);
+    queueSelectResult([
+      createMemberRow({ userId: currentUserId, role: "member" }),
+    ]);
+    deleteResults.push([{ roomId: privateRoomId, userId: currentUserId }]);
+
+    const result = await leaveRoomAction(privateRoomId);
+
+    expect(result.ok).toBe(true);
+    expect(mocks.delete).toHaveBeenCalledTimes(1);
+    expect(whereArgs.some((arg) => hasDeepValue(arg, currentUserId))).toBe(
+      true,
+    );
+  });
+
+  it("prevents removing the last owner", async () => {
+    queueSelectResult([createMembershipContext({ role: "owner" })]);
+    queueSelectResult([
+      createMemberRow({ userId: currentUserId, role: "owner" }),
+    ]);
+    queueSelectResult([{ ownerCount: 1 }]);
+
+    const result = await leaveRoomAction(privateRoomId);
+
+    expect(result.ok).toBe(false);
+
+    if (!result.ok) {
+      expect(result.error.code).toBe("CONFLICT");
+    }
+
+    expect(mocks.delete).not.toHaveBeenCalled();
   });
 });

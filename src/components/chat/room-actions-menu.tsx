@@ -3,12 +3,13 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
-import { PencilLine, Settings, Trash2 } from "lucide-react";
+import { LogOut, PencilLine, Settings, Trash2, UsersRound } from "lucide-react";
 import { toast } from "sonner";
 
 import {
   canDeleteRoom,
   canEditRoom,
+  canManageRoomMembers,
   getRoomSettingsHref,
 } from "@/components/chat/room-deletion";
 import { Button } from "@/components/ui/button";
@@ -27,7 +28,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { deleteRoomAction } from "@/server/actions/rooms";
+import { deleteRoomAction, leaveRoomAction } from "@/server/actions/rooms";
 import type { ChatRoom } from "@/types/chat";
 
 type RoomActionsMenuProps = {
@@ -42,9 +43,13 @@ export function RoomActionsMenu({
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isLeaveDialogOpen, setIsLeaveDialogOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
-  if (!canEditRoom(room) && !canDeleteRoom(room)) {
+  const canOpenSettings = canEditRoom(room) || canManageRoomMembers(room);
+  const canLeaveRoom = room.isMember && room.currentUserRole !== "owner";
+
+  if (!canOpenSettings && !canDeleteRoom(room) && !canLeaveRoom) {
     return null;
   }
 
@@ -66,6 +71,22 @@ export function RoomActionsMenu({
     });
   }
 
+  function handleLeaveRoom() {
+    startTransition(async () => {
+      const result = await leaveRoomAction(room.id);
+
+      if (!result.ok) {
+        toast.error(result.error.message);
+        return;
+      }
+
+      setIsLeaveDialogOpen(false);
+      setIsMenuOpen(false);
+      toast.success(result.message ?? "Left room.");
+      onDeleted(room.id);
+    });
+  }
+
   return (
     <>
       <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>
@@ -83,7 +104,7 @@ export function RoomActionsMenu({
           align="end"
           className="w-48 rounded-xl border border-slate-800 bg-slate-950 p-1.5 text-slate-200 shadow-2xl shadow-black/40 ring-1 ring-slate-800"
         >
-          {canEditRoom(room) ? (
+          {canOpenSettings ? (
             <DropdownMenuItem
               onSelect={(event) => {
                 event.preventDefault();
@@ -92,12 +113,37 @@ export function RoomActionsMenu({
               }}
               className="rounded-lg px-2.5 py-2 text-sm"
             >
-              <PencilLine className="size-4" />
-              Edit room
+              {canEditRoom(room) ? (
+                <PencilLine className="size-4" />
+              ) : (
+                <UsersRound className="size-4" />
+              )}
+              {canEditRoom(room) ? "Edit room" : "Manage members"}
             </DropdownMenuItem>
           ) : null}
 
-          {canEditRoom(room) && canDeleteRoom(room) ? <DropdownMenuSeparator className="bg-slate-800" /> : null}
+          {canOpenSettings && (canDeleteRoom(room) || canLeaveRoom) ? (
+            <DropdownMenuSeparator className="bg-slate-800" />
+          ) : null}
+
+          {canLeaveRoom ? (
+            <DropdownMenuItem
+              variant="destructive"
+              onSelect={(event) => {
+                event.preventDefault();
+                setIsMenuOpen(false);
+                setIsLeaveDialogOpen(true);
+              }}
+              className="rounded-lg px-2.5 py-2 text-sm"
+            >
+              <LogOut className="size-4" />
+              Leave room
+            </DropdownMenuItem>
+          ) : null}
+
+          {canLeaveRoom && canDeleteRoom(room) ? (
+            <DropdownMenuSeparator className="bg-slate-800" />
+          ) : null}
 
           {canDeleteRoom(room) ? (
             <DropdownMenuItem
@@ -170,6 +216,64 @@ export function RoomActionsMenu({
               className="border border-red-400/20 bg-red-500/10 text-red-200 hover:bg-red-500/20"
             >
               {isPending ? "Deleting..." : "Delete room"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={isLeaveDialogOpen}
+        onOpenChange={(open) => {
+          if (isPending) {
+            return;
+          }
+
+          setIsLeaveDialogOpen(open);
+        }}
+      >
+        <DialogContent
+          showCloseButton={!isPending}
+          className="max-w-md gap-0 rounded-[1.5rem] border border-slate-800 bg-slate-950 p-0 text-white shadow-2xl shadow-black/50 ring-1 ring-slate-800"
+        >
+          <div className="px-6 py-6">
+            <DialogHeader className="gap-3">
+              <div className="flex size-11 items-center justify-center rounded-2xl border border-red-400/20 bg-red-500/10 text-red-200">
+                <LogOut className="size-5" />
+              </div>
+
+              <DialogTitle className="text-xl font-semibold tracking-[-0.03em] text-white">
+                Leave room
+              </DialogTitle>
+
+              <DialogDescription className="text-sm leading-6 text-slate-400">
+                Leave{" "}
+                <span className="font-semibold text-slate-100">
+                  {room.name}
+                </span>
+                . You will lose access unless an owner or admin adds you back.
+              </DialogDescription>
+            </DialogHeader>
+          </div>
+
+          <DialogFooter className="rounded-b-[1.5rem] border-slate-800 bg-slate-950/95 px-6 py-4">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isPending}
+              onClick={() => setIsLeaveDialogOpen(false)}
+              className="border-slate-800 bg-slate-950 text-slate-300 hover:border-slate-700 hover:bg-slate-900 hover:text-white"
+            >
+              Cancel
+            </Button>
+
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={isPending}
+              onClick={handleLeaveRoom}
+              className="border border-red-400/20 bg-red-500/10 text-red-200 hover:bg-red-500/20"
+            >
+              {isPending ? "Leaving..." : "Leave room"}
             </Button>
           </DialogFooter>
         </DialogContent>

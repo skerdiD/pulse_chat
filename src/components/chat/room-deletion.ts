@@ -7,6 +7,10 @@ export function canManageRoom(room: RoomDeletionRole) {
   return room.currentUserRole === "owner";
 }
 
+export function canManageRoomMembers(room: RoomDeletionRole) {
+  return room.currentUserRole === "owner" || room.currentUserRole === "admin";
+}
+
 export function canDeleteRoom(room: RoomDeletionRole) {
   return canManageRoom(room);
 }

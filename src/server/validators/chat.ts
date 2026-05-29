@@ -96,11 +96,23 @@ export const toggleReactionSchema = z.object({
     .max(32, "Emoji value is too long."),
 });
 
-export const addRoomMemberSchema = z.object({
-  roomId: z.string().uuid("Invalid room id."),
-  userId: z.string().uuid("Invalid user id."),
-  role: z.enum(roomMemberRoleValues).default("member"),
-});
+export const addRoomMemberSchema = z
+  .object({
+    roomId: z.string().uuid("Invalid room id."),
+    userId: z.string().uuid("Invalid user id.").optional(),
+    username: z
+      .string()
+      .trim()
+      .min(1, "Username is required.")
+      .max(30, "Username must be 30 characters or less.")
+      .optional()
+      .transform((value) => value?.replace(/\s+/g, " ").trim()),
+    role: z.literal("member").default("member"),
+  })
+  .refine((input) => Boolean(input.userId) !== Boolean(input.username), {
+    message: "Choose exactly one member identifier.",
+    path: ["userId"],
+  });
 
 export const removeRoomMemberSchema = z.object({
   roomId: z.string().uuid("Invalid room id."),
@@ -117,5 +129,5 @@ export type SendMessageInput = z.infer<typeof sendMessageSchema>;
 export type UpdateMessageInput = z.infer<typeof updateMessageSchema>;
 export type MessageIdInput = z.infer<typeof messageIdSchema>;
 export type ToggleReactionInput = z.infer<typeof toggleReactionSchema>;
-export type AddRoomMemberInput = z.infer<typeof addRoomMemberSchema>;
+export type AddRoomMemberInput = z.input<typeof addRoomMemberSchema>;
 export type RemoveRoomMemberInput = z.infer<typeof removeRoomMemberSchema>;

@@ -18,14 +18,18 @@ import {
 } from "@/server/actions/utils";
 import { protectWithArcjet } from "@/server/actions/arcjet-protection";
 import {
+  addRoomMemberSchema,
   createRoomSchema,
   deleteRoomSchema,
   joinRoomSchema,
+  removeRoomMemberSchema,
   roomIdSchema,
   updateRoomSchema,
+  type AddRoomMemberInput,
   type CreateRoomInput,
   type DeleteRoomInput,
   type JoinRoomInput,
+  type RemoveRoomMemberInput,
   type UpdateRoomInput,
 } from "@/server/validators/chat";
 import type { ChatRoom, ChatRoomMember } from "@/types/chat";
@@ -94,6 +98,38 @@ async function protectRoomUpdateAction(userId: string) {
       "Room updates are temporarily unavailable. Please try again in a moment.",
     userId,
   });
+}
+
+async function getActiveRoomMembership(roomId: string, userId: string) {
+  const [membership] = await db
+    .select({
+      id: roomMembers.id,
+      roomId: roomMembers.roomId,
+      userId: roomMembers.userId,
+      role: roomMembers.role,
+      roomOwnerId: rooms.ownerId,
+    })
+    .from(roomMembers)
+    .innerJoin(rooms, eq(roomMembers.roomId, rooms.id))
+    .where(
+      and(
+        eq(roomMembers.roomId, roomId),
+        eq(roomMembers.userId, userId),
+        eq(rooms.isArchived, false),
+      ),
+    )
+    .limit(1);
+
+  return membership ?? null;
+}
+
+function canManageMembers(role: ChatRoomMember["role"]) {
+  return role === "owner" || role === "admin";
+}
+
+function revalidateRoomMemberPaths(roomId: string) {
+  revalidatePath("/chat");
+  revalidatePath(`/chat/rooms/${roomId}/settings`);
 }
 
 export async function getRoomsForCurrentUser(): Promise<
@@ -400,6 +436,286 @@ export async function getRoomMembersForCurrentUserRoom(
         members,
       });
     },
+  );
+}
+
+async function resolveTargetProfile(input: AddRoomMemberInput) {
+  if (input.userId) {
+    const [profile] = await db
+      .select({
+        id: profiles.id,
+        username: profiles.username,
+        avatarUrl: profiles.avatarUrl,
+      })
+      .from(profiles)
+      .where(eq(profiles.id, input.userId))
+      .limit(1);
+
+    return profile ? { ok: true as const, profile } : { ok: false as const };
+  }
+
+  if (!input.username) {
+    return { ok: false as const };
+  }
+
+  const matchingProfiles = await db
+    .select({
+      id: profiles.id,
+      username: profiles.username,
+      avatarUrl: profiles.avatarUrl,
+    })
+    .from(profiles)
+    .where(eq(profiles.username, input.username))
+    .limit(2);
+
+  if (matchingProfiles.length !== 1) {
+    return {
+      ok: false as const,
+      isAmbiguous: matchingProfiles.length > 1,
+    };
+  }
+
+  return { ok: true as const, profile: matchingProfiles[0] };
+}
+
+export async function addRoomMemberAction(
+  input: AddRoomMemberInput,
+): Promise<ActionResponse<{ member: ChatRoomMember }>> {
+  return withAuthedValidatedInput(
+    addRoomMemberSchema,
+    input,
+    async ({ input, user }) => {
+      const actorMembership = await getActiveRoomMembership(
+        input.roomId,
+        user.id,
+      );
+
+      if (!actorMembership) {
+        return actionError(
+          "FORBIDDEN",
+          "Room was not found or you do not have access.",
+        );
+      }
+
+      if (!canManageMembers(actorMembership.role)) {
+        return actionError(
+          "FORBIDDEN",
+          "Only room owners and admins can manage members.",
+        );
+      }
+
+      const targetProfile = await resolveTargetProfile(input);
+
+      if (!targetProfile.ok) {
+        return actionError(
+          targetProfile.isAmbiguous ? "CONFLICT" : "NOT_FOUND",
+          targetProfile.isAmbiguous
+            ? "More than one profile matches that username."
+            : "Profile was not found.",
+        );
+      }
+
+      const [existingMembership] = await db
+        .select({
+          id: roomMembers.id,
+        })
+        .from(roomMembers)
+        .where(
+          and(
+            eq(roomMembers.roomId, input.roomId),
+            eq(roomMembers.userId, targetProfile.profile.id),
+          ),
+        )
+        .limit(1);
+
+      if (existingMembership) {
+        return actionError("CONFLICT", "This user is already a room member.");
+      }
+
+      const now = new Date();
+
+      try {
+        const [createdMembership] = await db
+          .insert(roomMembers)
+          .values({
+            roomId: input.roomId,
+            userId: targetProfile.profile.id,
+            role: "member",
+            lastReadAt: now,
+            createdAt: now,
+            updatedAt: now,
+          })
+          .returning({
+            id: roomMembers.id,
+            userId: roomMembers.userId,
+            role: roomMembers.role,
+            joinedAt: roomMembers.createdAt,
+          });
+
+        if (!createdMembership) {
+          return actionError(
+            "INTERNAL_ERROR",
+            "Unable to add this member. Please try again.",
+          );
+        }
+
+        revalidateRoomMemberPaths(input.roomId);
+
+        return actionSuccess(
+          {
+            member: {
+              id: createdMembership.id,
+              userId: createdMembership.userId,
+              username: targetProfile.profile.username,
+              avatarUrl: getSafeAvatarUrl(targetProfile.profile.avatarUrl),
+              role: createdMembership.role,
+              joinedAt: createdMembership.joinedAt.toISOString(),
+            },
+          },
+          "Member added.",
+        );
+      } catch {
+        return actionError(
+          "INTERNAL_ERROR",
+          "Unable to add this member. Please try again.",
+        );
+      }
+    },
+  );
+}
+
+async function removeRoomMember({
+  roomId,
+  targetUserId,
+  actorUserId,
+  successMessage,
+}: {
+  roomId: string;
+  targetUserId: string;
+  actorUserId: string;
+  successMessage: string;
+}): Promise<ActionResponse<{ roomId: string; userId: string }>> {
+  const actorMembership = await getActiveRoomMembership(roomId, actorUserId);
+
+  if (!actorMembership) {
+    return actionError(
+      "FORBIDDEN",
+      "Room was not found or you do not have access.",
+    );
+  }
+
+  const [targetMembership] = await db
+    .select({
+      id: roomMembers.id,
+      userId: roomMembers.userId,
+      role: roomMembers.role,
+    })
+    .from(roomMembers)
+    .where(
+      and(eq(roomMembers.roomId, roomId), eq(roomMembers.userId, targetUserId)),
+    )
+    .limit(1);
+
+  if (!targetMembership) {
+    return actionError("NOT_FOUND", "Room member was not found.");
+  }
+
+  const isSelfRemoval = actorUserId === targetUserId;
+
+  if (!isSelfRemoval && !canManageMembers(actorMembership.role)) {
+    return actionError(
+      "FORBIDDEN",
+      "Only room owners and admins can manage members.",
+    );
+  }
+
+  if (targetMembership.role === "owner") {
+    const [ownerCountRow] = await db
+      .select({
+        ownerCount: count(roomMembers.id),
+      })
+      .from(roomMembers)
+      .where(
+        and(eq(roomMembers.roomId, roomId), eq(roomMembers.role, "owner")),
+      )
+      .limit(1);
+
+    const ownerCount = Number(ownerCountRow?.ownerCount ?? 0);
+
+    if (ownerCount <= 1 || targetMembership.userId === actorMembership.roomOwnerId) {
+      return actionError(
+        "CONFLICT",
+        "Transfer ownership before removing this owner.",
+      );
+    }
+  }
+
+  try {
+    const [deletedMembership] = await db
+      .delete(roomMembers)
+      .where(
+        and(
+          eq(roomMembers.roomId, roomId),
+          eq(roomMembers.userId, targetUserId),
+        ),
+      )
+      .returning({
+        roomId: roomMembers.roomId,
+        userId: roomMembers.userId,
+      });
+
+    if (!deletedMembership) {
+      return actionError("NOT_FOUND", "Room member was not found.");
+    }
+
+    revalidateRoomMemberPaths(roomId);
+
+    return actionSuccess(
+      {
+        roomId: deletedMembership.roomId,
+        userId: deletedMembership.userId,
+      },
+      successMessage,
+    );
+  } catch {
+    return actionError(
+      "INTERNAL_ERROR",
+      "Unable to update room members. Please try again.",
+    );
+  }
+}
+
+export async function removeRoomMemberAction(
+  input: RemoveRoomMemberInput,
+): Promise<ActionResponse<{ roomId: string; userId: string }>> {
+  return withAuthedValidatedInput(
+    removeRoomMemberSchema,
+    input,
+    async ({ input, user }) =>
+      removeRoomMember({
+        roomId: input.roomId,
+        targetUserId: input.userId,
+        actorUserId: user.id,
+        successMessage: "Member removed.",
+      }),
+  );
+}
+
+export async function leaveRoomAction(
+  input: string | { roomId: string },
+): Promise<ActionResponse<{ roomId: string; userId: string }>> {
+  const actionInput = typeof input === "string" ? { roomId: input } : input;
+
+  return withAuthedValidatedInput(
+    roomIdSchema,
+    actionInput,
+    async ({ input, user }) =>
+      removeRoomMember({
+        roomId: input.roomId,
+        targetUserId: user.id,
+        actorUserId: user.id,
+        successMessage: "Left room.",
+      }),
   );
 }
 

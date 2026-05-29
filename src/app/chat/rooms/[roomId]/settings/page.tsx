@@ -11,11 +11,19 @@ import {
   Sparkles,
 } from "lucide-react";
 
-import { canEditRoom, getRoomChatHref } from "@/components/chat/room-deletion";
+import {
+  canEditRoom,
+  canManageRoomMembers,
+  getRoomChatHref,
+} from "@/components/chat/room-deletion";
+import { RoomMembersPanel } from "@/components/settings/room-members-panel";
 import { RoomSettingsForm } from "@/components/settings/room-settings-form";
 import { AppLogo } from "@/components/shared/AppLogo";
 import { createClient } from "@/lib/supabase/server";
-import { getRoomsForCurrentUser } from "@/server/actions/rooms";
+import {
+  getRoomMembersForCurrentUserRoom,
+  getRoomsForCurrentUser,
+} from "@/server/actions/rooms";
 
 export const metadata: Metadata = {
   title: "Room Settings | Pulse Chat",
@@ -54,9 +62,12 @@ export default async function RoomSettingsPage({
     notFound();
   }
 
-  if (!canEditRoom(room)) {
+  if (!canManageRoomMembers(room)) {
     redirect(getRoomChatHref(room.id));
   }
+
+  const membersResult = await getRoomMembersForCurrentUserRoom(room.id);
+  const members = membersResult.ok ? membersResult.data.members : [];
 
   return (
     <main className="min-h-dvh overflow-hidden bg-[#050816] text-white">
@@ -127,8 +138,8 @@ export default async function RoomSettingsPage({
                 </p>
 
                 <p className="mt-2 text-xs font-medium leading-5 text-slate-500">
-                  Only the room owner can update these settings or delete the
-                  room.
+                  Owners can edit room identity. Owners and admins can manage
+                  members.
                 </p>
               </div>
 
@@ -149,7 +160,33 @@ export default async function RoomSettingsPage({
             </div>
           </div>
 
-          <RoomSettingsForm room={room} />
+          <div className="space-y-5">
+            {canEditRoom(room) ? (
+              <RoomSettingsForm room={room} />
+            ) : (
+              <div className="rounded-[1.75rem] border border-slate-800 bg-slate-950/82 p-5 shadow-2xl shadow-black/25 backdrop-blur-xl sm:p-6">
+                <div className="flex items-center gap-3">
+                  <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-purple-400/15 bg-slate-900 text-purple-200">
+                    <ShieldCheck className="size-5" />
+                  </div>
+                  <div>
+                    <p className="text-base font-semibold text-white">
+                      Member management
+                    </p>
+                    <p className="mt-1 text-sm font-medium text-slate-500">
+                      Room identity settings are owner-only.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <RoomMembersPanel
+              room={room}
+              members={members}
+              currentUserId={user.id}
+            />
+          </div>
         </section>
       </div>
     </main>

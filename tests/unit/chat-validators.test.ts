@@ -406,6 +406,30 @@ describe("chat validators", () => {
       }
     });
 
+    it("accepts username-based add room member input", () => {
+      const result = addRoomMemberSchema.safeParse({
+        roomId: validRoomId,
+        username: "  Ada   Lovelace  "
+      });
+
+      expect(result.success).toBe(true);
+
+      if (result.success) {
+        expect(result.data.username).toBe("Ada Lovelace");
+        expect(result.data.role).toBe("member");
+      }
+    });
+
+    it("prevents clients from assigning elevated room roles", () => {
+      const result = addRoomMemberSchema.safeParse({
+        roomId: validRoomId,
+        userId: validUserId,
+        role: "admin"
+      });
+
+      expect(result.success).toBe(false);
+    });
+
     it("rejects invalid room member role", () => {
       const result = addRoomMemberSchema.safeParse({
         roomId: validRoomId,
