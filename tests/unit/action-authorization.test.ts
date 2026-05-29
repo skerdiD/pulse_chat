@@ -5,12 +5,14 @@ vi.mock("server-only", () => ({}));
 
 const mocks = vi.hoisted(() => ({
   delete: vi.fn(),
+  execute: vi.fn(),
   insert: vi.fn(),
   protectWithArcjet: vi.fn(),
   revalidatePath: vi.fn(),
   requireUser: vi.fn(),
   select: vi.fn(),
   selectDistinctOn: vi.fn(),
+  transaction: vi.fn(),
   update: vi.fn(),
 }));
 
@@ -31,7 +33,7 @@ function createSelectChain() {
     innerJoin: vi.fn(() => chain),
     leftJoin: vi.fn(() => chain),
     limit: vi.fn(() => takeNextResult(selectResults)),
-    orderBy: vi.fn(() => takeNextResult(selectResults)),
+    orderBy: vi.fn(() => chain),
     then: (
       onFulfilled?: (value: unknown[]) => unknown,
       onRejected?: (reason: unknown) => unknown,
@@ -47,7 +49,7 @@ function createSelectChain() {
 
 function createInsertChain() {
   const chain = {
-    onConflictDoNothing: vi.fn(() => Promise.resolve()),
+    onConflictDoNothing: vi.fn(() => chain),
     returning: vi.fn(() => takeNextResult(insertResults)),
     values: vi.fn(() => chain),
   };
@@ -102,9 +104,11 @@ vi.mock("@/lib/arcjet", () => ({
 vi.mock("@/db", () => ({
   db: {
     delete: mocks.delete,
+    execute: mocks.execute,
     insert: mocks.insert,
     select: mocks.select,
     selectDistinctOn: mocks.selectDistinctOn,
+    transaction: mocks.transaction,
     update: mocks.update,
   },
 }));
@@ -212,9 +216,20 @@ function resetDbMocks() {
   whereArgs.length = 0;
 
   mocks.delete.mockImplementation(createDeleteChain);
+  mocks.execute.mockResolvedValue(undefined);
   mocks.insert.mockImplementation(createInsertChain);
   mocks.select.mockImplementation(createSelectChain);
   mocks.selectDistinctOn.mockImplementation(createSelectChain);
+  mocks.transaction.mockImplementation((handler) =>
+    handler({
+      delete: mocks.delete,
+      execute: mocks.execute,
+      insert: mocks.insert,
+      select: mocks.select,
+      selectDistinctOn: mocks.selectDistinctOn,
+      update: mocks.update,
+    }),
+  );
   mocks.update.mockImplementation(createUpdateChain);
 }
 
@@ -286,6 +301,92 @@ describe("chat action authorization", () => {
     expect(whereArgs.some((arg) => hasDeepValue(arg, false))).toBe(true);
   });
 
+  it("allows members to read messages in a private room with stable pagination", async () => {
+    const oldestMessageId = "55555555-5555-4555-8555-555555555553";
+    const middleMessageId = "55555555-5555-4555-8555-555555555554";
+    const newestMessageId = "55555555-5555-4555-8555-555555555555";
+    const extraMessageId = "55555555-5555-4555-8555-555555555556";
+
+    queueSelectResult([{ id: membershipId }]);
+    queueSelectResult([
+      {
+        id: newestMessageId,
+        roomId: privateRoomId,
+        userId: currentUserId,
+        replyToMessageId: null,
+        content: "Newest",
+        isEdited: false,
+        createdAt: new Date("2026-05-29T12:03:00.000Z"),
+        updatedAt: new Date("2026-05-29T12:03:00.000Z"),
+        authorId: currentUserId,
+        authorUsername: "Current User",
+        authorAvatarUrl: null,
+      },
+      {
+        id: middleMessageId,
+        roomId: privateRoomId,
+        userId: otherUserId,
+        replyToMessageId: null,
+        content: "Middle",
+        isEdited: false,
+        createdAt: new Date("2026-05-29T12:02:00.000Z"),
+        updatedAt: new Date("2026-05-29T12:02:00.000Z"),
+        authorId: otherUserId,
+        authorUsername: "Other User",
+        authorAvatarUrl: null,
+      },
+      {
+        id: oldestMessageId,
+        roomId: privateRoomId,
+        userId: currentUserId,
+        replyToMessageId: null,
+        content: "Oldest",
+        isEdited: false,
+        createdAt: new Date("2026-05-29T12:01:00.000Z"),
+        updatedAt: new Date("2026-05-29T12:01:00.000Z"),
+        authorId: currentUserId,
+        authorUsername: "Current User",
+        authorAvatarUrl: null,
+      },
+      {
+        id: extraMessageId,
+        roomId: privateRoomId,
+        userId: otherUserId,
+        replyToMessageId: null,
+        content: "Extra",
+        isEdited: false,
+        createdAt: new Date("2026-05-29T12:00:00.000Z"),
+        updatedAt: new Date("2026-05-29T12:00:00.000Z"),
+        authorId: otherUserId,
+        authorUsername: "Other User",
+        authorAvatarUrl: null,
+      },
+    ]);
+    queueSelectResult([]);
+
+    const result = await getMessagesForRoom({
+      roomId: privateRoomId,
+      limit: 3,
+    });
+
+    expect(result.ok).toBe(true);
+
+    if (result.ok) {
+      expect(result.data.messages.map((item) => item.id)).toEqual([
+        oldestMessageId,
+        middleMessageId,
+        newestMessageId,
+      ]);
+      expect(result.data.pageInfo).toEqual({
+        hasMore: true,
+        nextCursor: {
+          id: oldestMessageId,
+          createdAt: "2026-05-29T12:01:00.000Z",
+        },
+      });
+    }
+  });
+
   it("prevents non-members from sending messages to a private room", async () => {
     queueSelectResult([]);
 
@@ -296,6 +397,40 @@ describe("chat action authorization", () => {
 
     expectForbidden(result);
     expect(mocks.insert).not.toHaveBeenCalled();
+  });
+
+  it("allows members to send messages to a private room", async () => {
+    const createdAt = new Date("2026-05-29T12:10:00.000Z");
+
+    queueSelectResult([{ id: membershipId }]);
+    insertResults.push([
+      {
+        id: messageId,
+        content: "Hello",
+        replyToMessageId: null,
+        createdAt,
+        updatedAt: createdAt,
+      },
+    ]);
+
+    const result = await sendMessageAction({
+      roomId: privateRoomId,
+      content: "Hello",
+    });
+
+    expect(result.ok).toBe(true);
+
+    if (result.ok) {
+      expect(result.data).toEqual({
+        messageId,
+        content: "Hello",
+        replyToMessageId: null,
+        createdAt: createdAt.toISOString(),
+        updatedAt: createdAt.toISOString(),
+      });
+    }
+
+    expect(mocks.insert).toHaveBeenCalledTimes(1);
   });
 
   it("blocks new messages in archived rooms", async () => {
@@ -586,6 +721,33 @@ describe("chat action authorization", () => {
     }
 
     expect(mocks.insert).not.toHaveBeenCalled();
+  });
+
+  it("returns a conflict when a concurrent add already created membership", async () => {
+    queueSelectResult([createMembershipContext({ role: "owner" })]);
+    queueSelectResult([
+      {
+        id: otherUserId,
+        username: "Teammate",
+        avatarUrl: null,
+      },
+    ]);
+    queueSelectResult([]);
+    insertResults.push([]);
+
+    const result = await addRoomMemberAction({
+      roomId: privateRoomId,
+      userId: otherUserId,
+    });
+
+    expect(result.ok).toBe(false);
+
+    if (!result.ok) {
+      expect(result.error.code).toBe("CONFLICT");
+    }
+
+    expect(mocks.transaction).toHaveBeenCalledTimes(1);
+    expect(mocks.execute).toHaveBeenCalledTimes(1);
   });
 
   it("blocks member changes in archived rooms", async () => {

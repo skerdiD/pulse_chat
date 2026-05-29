@@ -126,6 +126,11 @@ export const messages = pgTable(
       table.roomId,
       table.createdAt,
     ),
+    roomCreatedAtIdIdx: index("messages_room_id_created_at_id_idx").on(
+      table.roomId,
+      table.createdAt,
+      table.id,
+    ),
     roomIdx: index("messages_room_id_idx").on(table.roomId),
     userIdx: index("messages_user_id_idx").on(table.userId),
     replyToIdx: index("messages_reply_to_message_id_idx").on(

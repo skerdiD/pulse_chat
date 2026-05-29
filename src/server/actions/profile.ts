@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { request } from "@arcjet/next";
+import * as Sentry from "@sentry/nextjs";
 import { eq } from "drizzle-orm";
 
 import { db } from "@/db";
@@ -119,12 +120,23 @@ export async function updateProfileAction(
 
         const supabase = await createClient();
 
-        await supabase.auth.updateUser({
+        const { error } = await supabase.auth.updateUser({
           data: {
             username: input.username,
             avatar_url: avatarUrl,
           },
         });
+
+        if (error) {
+          Sentry.captureException(error, {
+            tags: {
+              "profile.action": "update_metadata",
+            },
+            user: {
+              id: user.id,
+            },
+          });
+        }
 
         revalidatePath("/chat");
 

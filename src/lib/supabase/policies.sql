@@ -65,9 +65,32 @@ as $$
     );
 $$;
 
+create or replace function public.can_manage_room_members(
+  p_room_id uuid,
+  p_user_id uuid
+)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.room_members rm
+    join public.rooms r
+      on r.id = rm.room_id
+    where rm.room_id = p_room_id
+      and rm.user_id = p_user_id
+      and rm.role in ('owner', 'admin')
+      and r.is_archived = false
+  );
+$$;
+
 grant execute on function public.is_room_member(uuid, uuid) to authenticated;
 grant execute on function public.shares_room_with_profile(uuid, uuid) to authenticated;
 grant execute on function public.is_realtime_room_member(text, uuid) to authenticated;
+grant execute on function public.can_manage_room_members(uuid, uuid) to authenticated;
 
 alter table public.profiles enable row level security;
 alter table public.rooms enable row level security;
@@ -138,6 +161,7 @@ for update
 to authenticated
 using (
   owner_id = auth.uid()
+  and is_archived = false
 )
 with check (
   owner_id = auth.uid()
@@ -169,37 +193,31 @@ on public.room_members
 for insert
 to authenticated
 with check (
-  user_id = auth.uid()
-  and exists (
-    select 1
-    from public.rooms r
-    where r.id = room_id
-      and r.is_archived = false
-      and (
-        r.visibility = 'public'
-        or r.owner_id = auth.uid()
-      )
+  (
+    user_id = auth.uid()
+    and role = 'member'
+    and exists (
+      select 1
+      from public.rooms r
+      where r.id = room_id
+        and r.is_archived = false
+        and r.visibility = 'public'
+    )
   )
-);
-
-create policy "room_members_update_room_owner"
-on public.room_members
-for update
-to authenticated
-using (
-  exists (
-    select 1
-    from public.rooms r
-    where r.id = room_id
-      and r.owner_id = auth.uid()
+  or (
+    user_id = auth.uid()
+    and role = 'owner'
+    and exists (
+      select 1
+      from public.rooms r
+      where r.id = room_id
+        and r.is_archived = false
+        and r.owner_id = auth.uid()
+    )
   )
-)
-with check (
-  exists (
-    select 1
-    from public.rooms r
-    where r.id = room_id
-      and r.owner_id = auth.uid()
+  or (
+    role = 'member'
+    and public.can_manage_room_members(room_id, auth.uid())
   )
 );
 
@@ -208,8 +226,14 @@ on public.room_members
 for delete
 to authenticated
 using (
-  user_id = auth.uid()
-  and public.is_room_member(room_id, auth.uid())
+  role <> 'owner'
+  and (
+    (
+      user_id = auth.uid()
+      and public.is_room_member(room_id, auth.uid())
+    )
+    or public.can_manage_room_members(room_id, auth.uid())
+  )
 );
 
 drop policy if exists "messages_select_room_members" on public.messages;
@@ -253,12 +277,7 @@ for delete
 to authenticated
 using (
   user_id = auth.uid()
-  or exists (
-    select 1
-    from public.rooms r
-    where r.id = room_id
-      and r.owner_id = auth.uid()
-  )
+  and public.is_room_member(room_id, auth.uid())
 );
 
 drop policy if exists "message_reactions_select_room_members" on public.message_reactions;
@@ -327,4 +346,10 @@ for delete
 to authenticated
 using (
   user_id = auth.uid()
+  and exists (
+    select 1
+    from public.messages m
+    where m.id = message_id
+      and public.is_room_member(m.room_id, auth.uid())
+  )
 );

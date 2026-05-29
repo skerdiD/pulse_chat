@@ -125,7 +125,7 @@ export async function loginAction(
   if (error || !data.user) {
     return {
       ok: false,
-      message: error?.message ?? "Unable to sign in. Please try again.",
+      message: "Unable to sign in with those credentials.",
     };
   }
 
@@ -180,7 +180,7 @@ export async function signupAction(
   if (error || !data.user) {
     return {
       ok: false,
-      message: error?.message ?? "Unable to create account. Please try again.",
+      message: "Unable to create account. Please check the details and try again.",
     };
   }
 

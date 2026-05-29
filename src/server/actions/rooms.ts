@@ -515,48 +515,54 @@ export async function addRoomMemberAction(
         );
       }
 
-      const [existingMembership] = await db
-        .select({
-          id: roomMembers.id,
-        })
-        .from(roomMembers)
-        .where(
-          and(
-            eq(roomMembers.roomId, input.roomId),
-            eq(roomMembers.userId, targetProfile.profile.id),
-          ),
-        )
-        .limit(1);
-
-      if (existingMembership) {
-        return actionError("CONFLICT", "This user is already a room member.");
-      }
-
       const now = new Date();
 
       try {
-        const [createdMembership] = await db
-          .insert(roomMembers)
-          .values({
-            roomId: input.roomId,
-            userId: targetProfile.profile.id,
-            role: "member",
-            lastReadAt: now,
-            createdAt: now,
-            updatedAt: now,
-          })
-          .returning({
-            id: roomMembers.id,
-            userId: roomMembers.userId,
-            role: roomMembers.role,
-            joinedAt: roomMembers.createdAt,
-          });
+        const createdMembership = await db.transaction(async (tx) => {
+          await tx.execute(
+            sql`select pg_advisory_xact_lock(hashtextextended(${input.roomId}, 0))`,
+          );
+
+          const [existingMembership] = await tx
+            .select({
+              id: roomMembers.id,
+            })
+            .from(roomMembers)
+            .where(
+              and(
+                eq(roomMembers.roomId, input.roomId),
+                eq(roomMembers.userId, targetProfile.profile.id),
+              ),
+            )
+            .limit(1);
+
+          if (existingMembership) {
+            return null;
+          }
+
+          const [membership] = await tx
+            .insert(roomMembers)
+            .values({
+              roomId: input.roomId,
+              userId: targetProfile.profile.id,
+              role: "member",
+              lastReadAt: now,
+              createdAt: now,
+              updatedAt: now,
+            })
+            .onConflictDoNothing()
+            .returning({
+              id: roomMembers.id,
+              userId: roomMembers.userId,
+              role: roomMembers.role,
+              joinedAt: roomMembers.createdAt,
+            });
+
+          return membership ?? null;
+        });
 
         if (!createdMembership) {
-          return actionError(
-            "INTERNAL_ERROR",
-            "Unable to add this member. Please try again.",
-          );
+          return actionError("CONFLICT", "This user is already a room member.");
         }
 
         revalidateRoomMemberPaths(input.roomId);
@@ -604,22 +610,6 @@ async function removeRoomMember({
     );
   }
 
-  const [targetMembership] = await db
-    .select({
-      id: roomMembers.id,
-      userId: roomMembers.userId,
-      role: roomMembers.role,
-    })
-    .from(roomMembers)
-    .where(
-      and(eq(roomMembers.roomId, roomId), eq(roomMembers.userId, targetUserId)),
-    )
-    .limit(1);
-
-  if (!targetMembership) {
-    return actionError("NOT_FOUND", "Room member was not found.");
-  }
-
   const isSelfRemoval = actorUserId === targetUserId;
 
   if (!isSelfRemoval && !canManageMembers(actorMembership.role)) {
@@ -629,54 +619,83 @@ async function removeRoomMember({
     );
   }
 
-  if (targetMembership.role === "owner") {
-    const [ownerCountRow] = await db
-      .select({
-        ownerCount: count(roomMembers.id),
-      })
-      .from(roomMembers)
-      .where(
-        and(eq(roomMembers.roomId, roomId), eq(roomMembers.role, "owner")),
-      )
-      .limit(1);
-
-    const ownerCount = Number(ownerCountRow?.ownerCount ?? 0);
-
-    if (ownerCount <= 1 || targetMembership.userId === actorMembership.roomOwnerId) {
-      return actionError(
-        "CONFLICT",
-        "Transfer ownership before removing this owner.",
-      );
-    }
-  }
-
   try {
-    const [deletedMembership] = await db
-      .delete(roomMembers)
-      .where(
-        and(
-          eq(roomMembers.roomId, roomId),
-          eq(roomMembers.userId, targetUserId),
-        ),
-      )
-      .returning({
-        roomId: roomMembers.roomId,
-        userId: roomMembers.userId,
-      });
+    const result = await db.transaction(async (tx) => {
+      await tx.execute(
+        sql`select pg_advisory_xact_lock(hashtextextended(${roomId}, 0))`,
+      );
 
-    if (!deletedMembership) {
-      return actionError("NOT_FOUND", "Room member was not found.");
+      const [lockedTargetMembership] = await tx
+        .select({
+          id: roomMembers.id,
+          userId: roomMembers.userId,
+          role: roomMembers.role,
+        })
+        .from(roomMembers)
+        .where(
+          and(eq(roomMembers.roomId, roomId), eq(roomMembers.userId, targetUserId)),
+        )
+        .limit(1);
+
+      if (!lockedTargetMembership) {
+        return actionError("NOT_FOUND", "Room member was not found.");
+      }
+
+      if (lockedTargetMembership.role === "owner") {
+        const [ownerCountRow] = await tx
+          .select({
+            ownerCount: count(roomMembers.id),
+          })
+          .from(roomMembers)
+          .where(
+            and(eq(roomMembers.roomId, roomId), eq(roomMembers.role, "owner")),
+          )
+          .limit(1);
+
+        const ownerCount = Number(ownerCountRow?.ownerCount ?? 0);
+
+        if (
+          ownerCount <= 1 ||
+          lockedTargetMembership.userId === actorMembership.roomOwnerId
+        ) {
+          return actionError(
+            "CONFLICT",
+            "Transfer ownership before removing this owner.",
+          );
+        }
+      }
+
+      const [deletedMembership] = await tx
+        .delete(roomMembers)
+        .where(
+          and(
+            eq(roomMembers.roomId, roomId),
+            eq(roomMembers.userId, targetUserId),
+          ),
+        )
+        .returning({
+          roomId: roomMembers.roomId,
+          userId: roomMembers.userId,
+        });
+
+      if (!deletedMembership) {
+        return actionError("NOT_FOUND", "Room member was not found.");
+      }
+
+      return actionSuccess(
+        {
+          roomId: deletedMembership.roomId,
+          userId: deletedMembership.userId,
+        },
+        successMessage,
+      );
+    });
+
+    if (result.ok) {
+      revalidateRoomMemberPaths(roomId);
     }
 
-    revalidateRoomMemberPaths(roomId);
-
-    return actionSuccess(
-      {
-        roomId: deletedMembership.roomId,
-        userId: deletedMembership.userId,
-      },
-      successMessage,
-    );
+    return result;
   } catch {
     return actionError(
       "INTERNAL_ERROR",

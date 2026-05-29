@@ -1,0 +1,1 @@
+CREATE INDEX "messages_room_id_created_at_id_idx" ON "messages" USING btree ("room_id","created_at","id");
