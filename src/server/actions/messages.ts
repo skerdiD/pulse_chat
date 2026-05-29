@@ -20,6 +20,7 @@ import {
   type ActionResponse,
   withAuthedValidatedInput,
 } from "@/server/actions/utils";
+import { protectWithArcjet } from "@/server/actions/arcjet-protection";
 import {
   getMessagesForRoomSchema,
   messageIdSchema,
@@ -39,23 +40,19 @@ import type {
 const DEFAULT_MESSAGE_PAGE_SIZE = 30;
 
 async function protectSendMessageAction(userId: string) {
-  try {
-    const req = await request();
-    const decision = await sendMessageAj.protect(req, {
-      userId,
-    });
-
-    if (decision.isDenied()) {
-      return actionError(
-        "RATE_LIMITED",
-        "You are sending messages too fast. Please slow down for a moment.",
-      );
-    }
-
-    return actionSuccess(undefined);
-  } catch {
-    return actionSuccess(undefined);
-  }
+  return protectWithArcjet({
+    actionName: "send_message",
+    deniedMessage:
+      "You are sending messages too fast. Please slow down for a moment.",
+    failureMode: "fail-open",
+    getDecision: async () => {
+      const req = await request();
+      return sendMessageAj.protect(req, {
+        userId,
+      });
+    },
+    userId,
+  });
 }
 
 async function isRoomMember(roomId: string, userId: string) {

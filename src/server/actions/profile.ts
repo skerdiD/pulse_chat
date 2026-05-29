@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { request } from "@arcjet/next";
 import { eq } from "drizzle-orm";
 
 import { db } from "@/db";
@@ -8,7 +9,7 @@ import { profiles } from "@/db/schema";
 import { profileUpdateAj } from "@/lib/arcjet";
 import { getSafeAvatarUrl } from "@/lib/avatar";
 import { createClient } from "@/lib/supabase/server";
-import { request } from "@arcjet/next";
+import { protectWithArcjet } from "@/server/actions/arcjet-protection";
 import {
   actionError,
   actionSuccess,
@@ -23,23 +24,21 @@ import {
 import type { CurrentChatUser } from "@/types/chat";
 
 async function protectProfileUpdateAction(userId: string) {
-  try {
-    const req = await request();
-    const decision = await profileUpdateAj.protect(req, {
-      userId,
-    });
-
-    if (decision.isDenied()) {
-      return actionError(
-        "RATE_LIMITED",
-        "You are updating your profile too fast. Please wait a moment and try again.",
-      );
-    }
-
-    return actionSuccess(undefined);
-  } catch {
-    return actionSuccess(undefined);
-  }
+  return protectWithArcjet({
+    actionName: "update_profile",
+    deniedMessage:
+      "You are updating your profile too fast. Please wait a moment and try again.",
+    failureMode: "fail-closed",
+    getDecision: async () => {
+      const req = await request();
+      return profileUpdateAj.protect(req, {
+        userId,
+      });
+    },
+    unavailableMessage:
+      "Profile updates are temporarily unavailable. Please try again in a moment.",
+    userId,
+  });
 }
 
 export async function getCurrentUserProfile(): Promise<

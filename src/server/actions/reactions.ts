@@ -13,29 +13,26 @@ import {
   type ActionResponse,
   withAuthedValidatedInput,
 } from "@/server/actions/utils";
+import { protectWithArcjet } from "@/server/actions/arcjet-protection";
 import {
   toggleReactionSchema,
   type ToggleReactionInput,
 } from "@/server/validators/chat";
 
 async function protectReactionAction(userId: string) {
-  try {
-    const req = await request();
-    const decision = await toggleReactionAj.protect(req, {
-      userId,
-    });
-
-    if (decision.isDenied()) {
-      return actionError(
-        "RATE_LIMITED",
-        "You are reacting too fast. Please wait a moment and try again.",
-      );
-    }
-
-    return actionSuccess(undefined);
-  } catch {
-    return actionSuccess(undefined);
-  }
+  return protectWithArcjet({
+    actionName: "toggle_reaction",
+    deniedMessage:
+      "You are reacting too fast. Please wait a moment and try again.",
+    failureMode: "fail-open",
+    getDecision: async () => {
+      const req = await request();
+      return toggleReactionAj.protect(req, {
+        userId,
+      });
+    },
+    userId,
+  });
 }
 
 async function getMessageIfUserCanReact(messageId: string, userId: string) {

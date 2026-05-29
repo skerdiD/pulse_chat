@@ -16,6 +16,7 @@ import {
   type ActionResponse,
   withAuthedValidatedInput,
 } from "@/server/actions/utils";
+import { protectWithArcjet } from "@/server/actions/arcjet-protection";
 import {
   createRoomSchema,
   deleteRoomSchema,
@@ -44,63 +45,55 @@ function createRoomSlug(name: string) {
 }
 
 async function protectCreateRoomAction(userId: string) {
-  try {
-    const req = await request();
-    const decision = await createRoomAj.protect(req, {
-      userId,
-    });
-
-    if (decision.isDenied()) {
-      return actionError(
-        "RATE_LIMITED",
-        "You are creating rooms too fast. Please wait a moment and try again.",
-      );
-    }
-
-    return actionSuccess(undefined);
-  } catch {
-    return actionSuccess(undefined);
-  }
+  return protectWithArcjet({
+    actionName: "create_room",
+    deniedMessage:
+      "You are creating rooms too fast. Please wait a moment and try again.",
+    failureMode: "fail-closed",
+    getDecision: async () => {
+      const req = await request();
+      return createRoomAj.protect(req, {
+        userId,
+      });
+    },
+    unavailableMessage:
+      "Room creation is temporarily unavailable. Please try again in a moment.",
+    userId,
+  });
 }
 
 async function protectJoinRoomAction(userId: string) {
-  try {
-    const req = await request();
-    const decision = await joinRoomAj.protect(req, {
-      userId,
-    });
-
-    if (decision.isDenied()) {
-      return actionError(
-        "RATE_LIMITED",
-        "You are joining rooms too fast. Please wait a moment and try again.",
-      );
-    }
-
-    return actionSuccess(undefined);
-  } catch {
-    return actionSuccess(undefined);
-  }
+  return protectWithArcjet({
+    actionName: "join_room",
+    deniedMessage:
+      "You are joining rooms too fast. Please wait a moment and try again.",
+    failureMode: "fail-open",
+    getDecision: async () => {
+      const req = await request();
+      return joinRoomAj.protect(req, {
+        userId,
+      });
+    },
+    userId,
+  });
 }
 
 async function protectRoomUpdateAction(userId: string) {
-  try {
-    const req = await request();
-    const decision = await roomUpdateAj.protect(req, {
-      userId,
-    });
-
-    if (decision.isDenied()) {
-      return actionError(
-        "RATE_LIMITED",
-        "You are updating room settings too fast. Please wait a moment and try again.",
-      );
-    }
-
-    return actionSuccess(undefined);
-  } catch {
-    return actionSuccess(undefined);
-  }
+  return protectWithArcjet({
+    actionName: "update_room",
+    deniedMessage:
+      "You are updating room settings too fast. Please wait a moment and try again.",
+    failureMode: "fail-closed",
+    getDecision: async () => {
+      const req = await request();
+      return roomUpdateAj.protect(req, {
+        userId,
+      });
+    },
+    unavailableMessage:
+      "Room updates are temporarily unavailable. Please try again in a moment.",
+    userId,
+  });
 }
 
 export async function getRoomsForCurrentUser(): Promise<

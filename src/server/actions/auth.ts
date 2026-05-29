@@ -9,6 +9,7 @@ import { db } from "@/db";
 import { profiles } from "@/db/schema";
 import { authAj } from "@/lib/arcjet";
 import { createClient } from "@/lib/supabase/server";
+import { protectWithArcjet } from "@/server/actions/arcjet-protection";
 import {
   loginSchema,
   signupSchema,
@@ -23,27 +24,29 @@ type AuthActionResult = {
 };
 
 async function protectAuthAction(): Promise<AuthActionResult> {
-  try {
-    const req = await request();
-    const decision = await authAj.protect(req);
+  const result = await protectWithArcjet({
+    actionName: "auth",
+    deniedMessage: "Too many attempts. Please wait a moment and try again.",
+    failureMode: "fail-closed",
+    getDecision: async () => {
+      const req = await request();
+      return authAj.protect(req);
+    },
+    unavailableMessage:
+      "Sign in is temporarily unavailable. Please try again in a moment.",
+  });
 
-    if (decision.isDenied()) {
-      return {
-        ok: false,
-        message: "Too many attempts. Please wait a moment and try again.",
-      };
-    }
-
-    return {
-      ok: true,
-      message: "Allowed.",
-    };
-  } catch {
+  if (result.ok) {
     return {
       ok: true,
       message: "Allowed.",
     };
   }
+
+  return {
+    ok: false,
+    message: result.error.message,
+  };
 }
 
 function getProfileUsername(user: Pick<User, "email" | "user_metadata">) {
