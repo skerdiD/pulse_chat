@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { LockKeyhole } from "lucide-react";
 
@@ -9,6 +9,7 @@ import { MessageComposer } from "@/components/chat/message-composer";
 import { MessageList } from "@/components/chat/message-list";
 import { useRoomRealtime } from "@/hooks/use-room-realtime";
 import { getMessagesForRoom } from "@/server/actions/messages";
+import { markRoomAsReadAction } from "@/server/actions/rooms";
 import type {
   ChatMessage,
   ChatMessagePageInfo,
@@ -55,6 +56,7 @@ export function ChatRoom({
   const [isLoadingOlderMessages, setIsLoadingOlderMessages] = useState(false);
   const [replyToMessage, setReplyToMessage] =
     useState<ChatMessageReplyPreview | null>(null);
+  const lastReadMarkerRef = useRef<string | null>(null);
 
   const clearReply = useCallback(() => {
     setReplyToMessage(null);
@@ -122,6 +124,24 @@ export function ChatRoom({
     currentUser,
     enabled: canSendMessages,
   });
+
+  useEffect(() => {
+    if (!canSendMessages) {
+      return;
+    }
+
+    const latestMessage = messages.at(-1);
+    const readMarker = latestMessage
+      ? `${room.id}:${latestMessage.id}:${latestMessage.createdAt}`
+      : `${room.id}:empty`;
+
+    if (lastReadMarkerRef.current === readMarker) {
+      return;
+    }
+
+    lastReadMarkerRef.current = readMarker;
+    void markRoomAsReadAction(room.id);
+  }, [canSendMessages, messages, room.id]);
 
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden">

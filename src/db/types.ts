@@ -31,6 +31,7 @@ export type PublicProfile = Pick<
 
 export type RoomWithMemberCount = Room & {
   memberCount: number;
+  unreadCount: number;
 };
 
 export type MessageWithAuthorAndReactions = Message & {

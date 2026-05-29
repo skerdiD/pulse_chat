@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { request } from "@arcjet/next";
-import { and, count, desc, eq, inArray, or } from "drizzle-orm";
+import { and, count, desc, eq, gt, inArray, ne, or, sql } from "drizzle-orm";
 
 import { db } from "@/db";
 import { messages, profiles, roomMembers, rooms } from "@/db/schema";
@@ -185,6 +185,38 @@ export async function getRoomsForCurrentUser(): Promise<
           .orderBy(messages.roomId, desc(messages.createdAt))
       : [];
 
+  const unreadCounts =
+    visibleMemberRoomIds.length > 0
+      ? await db
+          .select({
+            roomId: messages.roomId,
+            unreadCount: count(messages.id),
+          })
+          .from(messages)
+          .innerJoin(
+            roomMembers,
+            and(
+              eq(roomMembers.roomId, messages.roomId),
+              eq(roomMembers.userId, user.id),
+            ),
+          )
+          .where(
+            and(
+              inArray(messages.roomId, visibleMemberRoomIds),
+              ne(messages.userId, user.id),
+              gt(
+                messages.createdAt,
+                sql`coalesce(${roomMembers.lastReadAt}, ${roomMembers.createdAt})`,
+              ),
+            ),
+          )
+          .groupBy(messages.roomId)
+      : [];
+
+  const unreadCountByRoomId = new Map(
+    unreadCounts.map((item) => [item.roomId, Number(item.unreadCount)]),
+  );
+
   const latestMessageByRoomId = new Map<
     string,
     {
@@ -223,6 +255,7 @@ export async function getRoomsForCurrentUser(): Promise<
       createdAt: room.createdAt.toISOString(),
       updatedAt: room.updatedAt.toISOString(),
       memberCount: memberCountByRoomId.get(room.id) ?? 0,
+      unreadCount: currentUserRole ? (unreadCountByRoomId.get(room.id) ?? 0) : 0,
       isMember: Boolean(currentUserRole),
       currentUserRole,
       latestMessagePreview: latestMessage
@@ -243,6 +276,73 @@ export async function getRoomsForCurrentUser(): Promise<
   return actionSuccess({
     rooms: serializedRooms,
   });
+}
+
+export async function markRoomAsReadAction(
+  input: string | { roomId: string },
+): Promise<ActionResponse<{ roomId: string; lastReadAt: string }>> {
+  const actionInput = typeof input === "string" ? { roomId: input } : input;
+
+  return withAuthedValidatedInput(
+    roomIdSchema,
+    actionInput,
+    async ({ input, user }) => {
+      const [membership] = await db
+        .select({
+          id: roomMembers.id,
+        })
+        .from(roomMembers)
+        .innerJoin(rooms, eq(roomMembers.roomId, rooms.id))
+        .where(
+          and(
+            eq(roomMembers.roomId, input.roomId),
+            eq(roomMembers.userId, user.id),
+            eq(rooms.isArchived, false),
+          ),
+        )
+        .limit(1);
+
+      if (!membership) {
+        return actionError(
+          "FORBIDDEN",
+          "Join this room before marking messages as read.",
+        );
+      }
+
+      const now = new Date();
+
+      try {
+        const [updatedMembership] = await db
+          .update(roomMembers)
+          .set({
+            lastReadAt: now,
+            updatedAt: now,
+          })
+          .where(eq(roomMembers.id, membership.id))
+          .returning({
+            roomId: roomMembers.roomId,
+            lastReadAt: roomMembers.lastReadAt,
+          });
+
+        if (!updatedMembership?.lastReadAt) {
+          return actionError(
+            "NOT_FOUND",
+            "Room membership could not be updated.",
+          );
+        }
+
+        return actionSuccess({
+          roomId: updatedMembership.roomId,
+          lastReadAt: updatedMembership.lastReadAt.toISOString(),
+        });
+      } catch {
+        return actionError(
+          "INTERNAL_ERROR",
+          "Unable to mark this room as read. Please try again.",
+        );
+      }
+    },
+  );
 }
 
 export async function getRoomMembersForCurrentUserRoom(
@@ -347,6 +447,7 @@ export async function createRoomAction(
               roomId: room.id,
               userId: user.id,
               role: "owner",
+              lastReadAt: now,
               createdAt: now,
               updatedAt: now,
             })
@@ -419,6 +520,7 @@ export async function joinRoomAction(
             roomId: room.id,
             userId: user.id,
             role: "member",
+            lastReadAt: now,
             createdAt: now,
             updatedAt: now,
           })

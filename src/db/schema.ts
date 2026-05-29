@@ -79,6 +79,7 @@ export const roomMembers = pgTable(
       .notNull()
       .references(() => profiles.id, { onDelete: "cascade" }),
     role: roomMemberRoleEnum("role").notNull().default("member"),
+    lastReadAt: timestamp("last_read_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

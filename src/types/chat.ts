@@ -28,6 +28,7 @@ export type ChatRoom = {
   createdAt: string;
   updatedAt: string;
   memberCount: number;
+  unreadCount: number;
   isMember: boolean;
   currentUserRole: ChatRoomMemberRole | null;
   latestMessagePreview: ChatLatestMessagePreview | null;

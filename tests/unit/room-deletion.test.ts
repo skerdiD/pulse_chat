@@ -22,6 +22,7 @@ function createRoom(overrides: Partial<ChatRoom> = {}): ChatRoom {
     createdAt: overrides.createdAt ?? new Date().toISOString(),
     updatedAt: overrides.updatedAt ?? new Date().toISOString(),
     memberCount: overrides.memberCount ?? 1,
+    unreadCount: overrides.unreadCount ?? 0,
     isMember: overrides.isMember ?? true,
     currentUserRole: overrides.currentUserRole ?? "member",
     latestMessagePreview: overrides.latestMessagePreview ?? null,

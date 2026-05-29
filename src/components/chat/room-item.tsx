@@ -70,8 +70,11 @@ export function RoomItem({
 
   const latestTime = room.latestMessagePreview?.timeLabel ?? "";
   const roomInitials = getRoomInitials(room.name);
+  const unreadLabel = room.unreadCount > 99 ? "99+" : String(room.unreadCount);
   const collapsedSummary = room.isMember
-    ? `${room.memberCount} ${room.memberCount === 1 ? "member" : "members"}`
+    ? room.unreadCount > 0
+      ? `${room.unreadCount} unread`
+      : `${room.memberCount} ${room.memberCount === 1 ? "member" : "members"}`
     : room.visibility === "public"
       ? "Public room, join to chat"
       : "Private room";
@@ -124,6 +127,12 @@ export function RoomItem({
           >
             {collapsedBadge}
           </span>
+
+          {room.unreadCount > 0 ? (
+            <span className="absolute -right-2 -top-2 flex min-w-5 items-center justify-center rounded-full border border-slate-950 bg-emerald-400 px-1.5 text-[10px] font-bold leading-5 text-slate-950 shadow-lg shadow-black/30">
+              {unreadLabel}
+            </span>
+          ) : null}
         </div>
 
         <span className="sr-only">{room.name}</span>
@@ -217,6 +226,15 @@ export function RoomItem({
             {latestTime ? (
               <span className="ml-auto shrink-0 text-[11px] font-medium text-slate-500">
                 {latestTime}
+              </span>
+            ) : null}
+
+            {room.unreadCount > 0 ? (
+              <span
+                aria-label={`${room.unreadCount} unread messages`}
+                className="shrink-0 rounded-full bg-emerald-400 px-1.5 text-[10px] font-bold leading-5 text-slate-950"
+              >
+                {unreadLabel}
               </span>
             ) : null}
           </div>

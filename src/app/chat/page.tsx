@@ -9,6 +9,7 @@ import { getCurrentUserProfile } from "@/server/actions/profile";
 import {
   getRoomMembersForCurrentUserRoom,
   getRoomsForCurrentUser,
+  markRoomAsReadAction,
 } from "@/server/actions/rooms";
 import type { ChatMessagePageInfo } from "@/types/chat";
 
@@ -60,6 +61,7 @@ export default async function ChatPage({ searchParams }: ChatPageProps) {
       ? await Promise.all([
           getMessagesForRoom(activeRoom.id),
           getRoomMembersForCurrentUserRoom(activeRoom.id),
+          markRoomAsReadAction(activeRoom.id),
         ])
       : [null, null];
 
@@ -71,6 +73,16 @@ export default async function ChatPage({ searchParams }: ChatPageProps) {
         nextCursor: null,
       };
   const members = membersResult?.ok ? membersResult.data.members : [];
+  const visibleRooms = activeRoom?.isMember
+    ? rooms.map((room) =>
+        room.id === activeRoom.id
+          ? {
+              ...room,
+              unreadCount: 0,
+            }
+          : room,
+      )
+    : rooms;
 
   const fallbackUsername =
     typeof user.user_metadata?.username === "string" &&
@@ -82,7 +94,7 @@ export default async function ChatPage({ searchParams }: ChatPageProps) {
 
   return (
     <ChatLayout
-      rooms={rooms}
+      rooms={visibleRooms}
       activeRoomId={activeRoom?.id ?? null}
       messages={messages}
       messagePageInfo={messagePageInfo}

@@ -118,6 +118,7 @@ import {
 import {
   getRoomsForCurrentUser,
   joinRoomAction,
+  markRoomAsReadAction,
   updateRoomAction,
 } from "@/server/actions/rooms";
 
@@ -381,6 +382,7 @@ describe("chat action authorization", () => {
       { roomId: privateRoomId, memberCount: 2 },
     ]);
     queueSelectResult([]);
+    queueSelectResult([{ roomId: privateRoomId, unreadCount: 4 }]);
 
     const result = await getRoomsForCurrentUser();
 
@@ -398,6 +400,7 @@ describe("chat action authorization", () => {
             id: privateRoomId,
             currentUserRole: "member",
             isMember: true,
+            unreadCount: 4,
             visibility: "private",
           }),
         ]),
@@ -409,5 +412,41 @@ describe("chat action authorization", () => {
       true,
     );
     expect(whereArgs.some((arg) => hasDeepValue(arg, "public"))).toBe(true);
+  });
+
+  it("marks a joined room as read for the current user", async () => {
+    const membershipId = "66666666-6666-4666-8666-666666666666";
+    const lastReadAt = new Date("2026-05-29T12:15:00.000Z");
+
+    queueSelectResult([{ id: membershipId }]);
+    updateResults.push([{ roomId: privateRoomId, lastReadAt }]);
+
+    const result = await markRoomAsReadAction(privateRoomId);
+
+    expect(result.ok).toBe(true);
+
+    if (result.ok) {
+      expect(result.data).toEqual({
+        roomId: privateRoomId,
+        lastReadAt: lastReadAt.toISOString(),
+      });
+    }
+
+    expect(mocks.update).toHaveBeenCalledTimes(1);
+    expect(whereArgs.some((arg) => hasDeepValue(arg, membershipId))).toBe(true);
+  });
+
+  it("prevents non-members from marking a private room as read", async () => {
+    queueSelectResult([]);
+
+    const result = await markRoomAsReadAction(privateRoomId);
+
+    expect(result.ok).toBe(false);
+
+    if (!result.ok) {
+      expect(result.error.code).toBe("FORBIDDEN");
+    }
+
+    expect(mocks.update).not.toHaveBeenCalled();
   });
 });
