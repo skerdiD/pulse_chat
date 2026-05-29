@@ -118,6 +118,33 @@ describe("profile validators", () => {
     expect(result.success).toBe(false);
   });
 
+  it("rejects credentialed avatar URLs", () => {
+    const result = updateProfileSchema.safeParse({
+      username: "Skerdi Dev",
+      avatarUrl: "https://user:pass@example.com/avatar.png"
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects obvious non-image avatar URLs", () => {
+    const result = updateProfileSchema.safeParse({
+      username: "Skerdi Dev",
+      avatarUrl: "https://example.com/profile.html"
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("allows hosted image URLs without file extensions", () => {
+    const result = updateProfileSchema.safeParse({
+      username: "Skerdi Dev",
+      avatarUrl: "https://images.example.com/u/12345?size=96"
+    });
+
+    expect(result.success).toBe(true);
+  });
+
   it("rejects avatar URLs over 500 characters", () => {
     const longUrl = `https://example.com/${"a".repeat(500)}`;
 

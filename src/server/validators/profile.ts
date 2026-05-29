@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { isSafeAvatarUrl } from "@/lib/avatar";
+import { isSafeAvatarUrl, MAX_AVATAR_URL_LENGTH } from "@/lib/avatar";
 
 export const updateProfileSchema = z.object({
   username: z
@@ -22,10 +22,13 @@ export const updateProfileSchema = z.object({
       z
         .string()
         .url("Enter a valid avatar URL.")
+        .max(
+          MAX_AVATAR_URL_LENGTH,
+          `Avatar URL must be ${MAX_AVATAR_URL_LENGTH} characters or less.`,
+        )
         .refine(isSafeAvatarUrl, {
-          message: "Avatar URL must start with http:// or https://.",
+          message: "Avatar URL must be a safe http:// or https:// image URL.",
         })
-        .max(500, "Avatar URL must be 500 characters or less.")
         .optional(),
     ),
 });
