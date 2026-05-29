@@ -62,9 +62,15 @@ type SavedMessageResult = {
 };
 
 function sortMessagesByCreatedAt(messages: ChatMessage[]) {
-  return [...messages].sort(
-    (a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt),
-  );
+  return [...messages].sort((a, b) => {
+    const createdAtDiff = Date.parse(a.createdAt) - Date.parse(b.createdAt);
+
+    if (createdAtDiff !== 0) {
+      return createdAtDiff;
+    }
+
+    return a.id.localeCompare(b.id);
+  });
 }
 
 function createTemporaryMessageId() {

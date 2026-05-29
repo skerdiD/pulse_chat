@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { request } from "@arcjet/next";
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, lt, or } from "drizzle-orm";
 
 import { db } from "@/db";
 import {
@@ -21,15 +21,22 @@ import {
   withAuthedValidatedInput,
 } from "@/server/actions/utils";
 import {
+  getMessagesForRoomSchema,
   messageIdSchema,
-  roomIdSchema,
   sendMessageSchema,
   updateMessageSchema,
+  type GetMessagesForRoomInput,
   type MessageIdInput,
   type SendMessageInput,
   type UpdateMessageInput,
 } from "@/server/validators/chat";
-import type { ChatMessage, ChatMessageReactionSummary } from "@/types/chat";
+import type {
+  ChatMessage,
+  ChatMessagePageInfo,
+  ChatMessageReactionSummary,
+} from "@/types/chat";
+
+const DEFAULT_MESSAGE_PAGE_SIZE = 30;
 
 async function protectSendMessageAction(userId: string) {
   try {
@@ -146,11 +153,15 @@ function getReactionsForMessage(
 }
 
 export async function getMessagesForRoom(
-  roomId: string,
-): Promise<ActionResponse<{ messages: ChatMessage[] }>> {
+  input: string | GetMessagesForRoomInput,
+): Promise<
+  ActionResponse<{ messages: ChatMessage[]; pageInfo: ChatMessagePageInfo }>
+> {
+  const actionInput = typeof input === "string" ? { roomId: input } : input;
+
   return withAuthedValidatedInput(
-    roomIdSchema,
-    { roomId },
+    getMessagesForRoomSchema,
+    actionInput,
     async ({ input, user }) => {
       const canAccessRoom = await isRoomMember(input.roomId, user.id);
 
@@ -161,7 +172,21 @@ export async function getMessagesForRoom(
         );
       }
 
-      const rows = await db
+      const cursorCreatedAt = input.cursor
+        ? new Date(input.cursor.createdAt)
+        : null;
+      const cursorPredicate =
+        input.cursor && cursorCreatedAt
+          ? or(
+              lt(messages.createdAt, cursorCreatedAt),
+              and(
+                eq(messages.createdAt, cursorCreatedAt),
+                lt(messages.id, input.cursor.id),
+              ),
+            )
+          : undefined;
+      const limit = input.limit ?? DEFAULT_MESSAGE_PAGE_SIZE;
+      const fetchedRows = await db
         .select({
           id: messages.id,
           roomId: messages.roomId,
@@ -177,8 +202,16 @@ export async function getMessagesForRoom(
         })
         .from(messages)
         .innerJoin(profiles, eq(messages.userId, profiles.id))
-        .where(eq(messages.roomId, input.roomId))
-        .orderBy(asc(messages.createdAt));
+        .where(
+          cursorPredicate
+            ? and(eq(messages.roomId, input.roomId), cursorPredicate)
+            : eq(messages.roomId, input.roomId),
+        )
+        .orderBy(desc(messages.createdAt), desc(messages.id))
+        .limit(limit + 1);
+
+      const hasMore = fetchedRows.length > limit;
+      const rows = fetchedRows.slice(0, limit).reverse();
 
       const messageIds = rows.map((message) => message.id);
 
@@ -196,17 +229,75 @@ export async function getMessagesForRoom(
 
       const reactionMap = buildReactionMap(reactionRows, user.id);
 
-      const messagePreviewById = new Map(
-        rows.map((message) => [
-          message.id,
-          {
-            id: message.id,
-            content: message.content,
-            authorUsername: message.authorUsername,
-            createdAt: message.createdAt.toISOString(),
-          },
-        ]),
+      const replyToMessageIds = Array.from(
+        new Set(
+          rows
+            .map((message) => message.replyToMessageId)
+            .filter((messageId): messageId is string => Boolean(messageId)),
+        ),
       );
+      const missingReplyToMessageIds = replyToMessageIds.filter(
+        (messageId) => !messageIds.includes(messageId),
+      );
+      const replyRows =
+        missingReplyToMessageIds.length > 0
+          ? await db
+              .select({
+                id: messages.id,
+                content: messages.content,
+                createdAt: messages.createdAt,
+                authorUsername: profiles.username,
+              })
+              .from(messages)
+              .innerJoin(profiles, eq(messages.userId, profiles.id))
+              .where(
+                and(
+                  inArray(messages.id, missingReplyToMessageIds),
+                  eq(messages.roomId, input.roomId),
+                ),
+              )
+          : [];
+
+      const messagePreviewById = new Map([
+        ...rows.map(
+          (message) =>
+            [
+              message.id,
+              {
+                id: message.id,
+                content: message.content,
+                authorUsername: message.authorUsername,
+                createdAt: message.createdAt.toISOString(),
+              },
+            ] as const,
+        ),
+        ...replyRows.map(
+          (message) =>
+            [
+              message.id,
+              {
+                id: message.id,
+                content: message.content,
+                authorUsername: message.authorUsername,
+                createdAt: message.createdAt.toISOString(),
+              },
+            ] as const,
+        ),
+      ]);
+
+      const nextCursor = hasMore
+        ? rows[0]
+          ? {
+              id: rows[0].id,
+              createdAt: rows[0].createdAt.toISOString(),
+            }
+          : null
+        : null;
+
+      const pageInfo: ChatMessagePageInfo = {
+        hasMore,
+        nextCursor,
+      };
 
       const serializedMessages: ChatMessage[] = rows.map((message) => ({
         id: message.id,
@@ -230,6 +321,7 @@ export async function getMessagesForRoom(
 
       return actionSuccess({
         messages: serializedMessages,
+        pageInfo,
       });
     },
   );

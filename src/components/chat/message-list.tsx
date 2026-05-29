@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { Loader2, MessageSquareText } from "lucide-react";
 
 import { MessageItem } from "@/components/chat/message-item";
@@ -14,6 +14,9 @@ type MessageListProps = {
   roomName: string;
   typingUsers: TypingUser[];
   isLoading?: boolean;
+  hasOlderMessages?: boolean;
+  isLoadingOlderMessages?: boolean;
+  onLoadOlderMessages?: () => void | Promise<void>;
   onReply: (message: ChatMessage) => void;
   onMessageUpdated: (
     messageId: string,
@@ -60,6 +63,9 @@ export function MessageList({
   roomName,
   typingUsers,
   isLoading = false,
+  hasOlderMessages = false,
+  isLoadingOlderMessages = false,
+  onLoadOlderMessages,
   onReply,
   onMessageUpdated,
   onReactionToggle,
@@ -102,6 +108,27 @@ export function MessageList({
     latestItemUserId: latestMessage?.userId ?? null,
     currentUserId,
   });
+
+  const handleLoadOlderMessages = useCallback(async () => {
+    if (!onLoadOlderMessages || isLoadingOlderMessages) {
+      return;
+    }
+
+    const container = containerRef.current;
+    const previousScrollHeight = container?.scrollHeight ?? 0;
+    const previousScrollTop = container?.scrollTop ?? 0;
+
+    await onLoadOlderMessages();
+
+    requestAnimationFrame(() => {
+      if (!container) {
+        return;
+      }
+
+      container.scrollTop =
+        container.scrollHeight - previousScrollHeight + previousScrollTop;
+    });
+  }, [containerRef, isLoadingOlderMessages, onLoadOlderMessages]);
 
   if (isLoading) {
     return (
@@ -157,6 +184,22 @@ export function MessageList({
         className="pulse-scrollbar h-full overflow-y-auto px-3 py-4 sm:px-4 lg:px-6 xl:px-7"
       >
         <div className="flex w-full flex-col gap-0.5">
+          {hasOlderMessages ? (
+            <div className="flex justify-center pb-3 pt-1">
+              <button
+                type="button"
+                onClick={() => void handleLoadOlderMessages()}
+                disabled={isLoadingOlderMessages}
+                className="inline-flex h-9 items-center justify-center gap-2 rounded-full border border-slate-800 bg-slate-950/85 px-3 text-xs font-semibold text-slate-300 shadow-lg shadow-black/15 transition hover:border-purple-400/30 hover:text-purple-100 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isLoadingOlderMessages ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : null}
+                {isLoadingOlderMessages ? "Loading" : "Load older"}
+              </button>
+            </div>
+          ) : null}
+
           {groupedMessages.map((group) => (
             <section key={group.label} aria-label={group.label}>
               <div className="sticky top-2 z-10 my-3 flex justify-center">

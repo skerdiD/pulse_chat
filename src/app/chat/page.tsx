@@ -10,6 +10,7 @@ import {
   getRoomMembersForCurrentUserRoom,
   getRoomsForCurrentUser,
 } from "@/server/actions/rooms";
+import type { ChatMessagePageInfo } from "@/types/chat";
 
 export const metadata: Metadata = {
   title: "Chat | Pulse Chat",
@@ -63,6 +64,12 @@ export default async function ChatPage({ searchParams }: ChatPageProps) {
       : [null, null];
 
   const messages = messagesResult?.ok ? messagesResult.data.messages : [];
+  const messagePageInfo: ChatMessagePageInfo = messagesResult?.ok
+    ? messagesResult.data.pageInfo
+    : {
+        hasMore: false,
+        nextCursor: null,
+      };
   const members = membersResult?.ok ? membersResult.data.members : [];
 
   const fallbackUsername =
@@ -78,6 +85,7 @@ export default async function ChatPage({ searchParams }: ChatPageProps) {
       rooms={rooms}
       activeRoomId={activeRoom?.id ?? null}
       messages={messages}
+      messagePageInfo={messagePageInfo}
       members={members}
       currentUser={{
         id: user.id,

@@ -44,6 +44,22 @@ export const roomIdSchema = z.object({
 export const joinRoomSchema = roomIdSchema;
 export const deleteRoomSchema = roomIdSchema;
 
+export const messagePageLimitSchema = z.number().int().min(1).max(60);
+
+export const messageCursorSchema = z.object({
+  id: z.string().uuid("Invalid message cursor."),
+  createdAt: z
+    .string()
+    .refine((value) => !Number.isNaN(Date.parse(value)), {
+      message: "Invalid message cursor.",
+    }),
+});
+
+export const getMessagesForRoomSchema = roomIdSchema.extend({
+  limit: messagePageLimitSchema.optional().default(30),
+  cursor: messageCursorSchema.nullable().optional(),
+});
+
 export const sendMessageSchema = z.object({
   roomId: z.string().uuid("Invalid room id."),
   content: z
@@ -96,6 +112,7 @@ export type UpdateRoomInput = z.infer<typeof updateRoomSchema>;
 export type RoomIdInput = z.infer<typeof roomIdSchema>;
 export type JoinRoomInput = z.infer<typeof joinRoomSchema>;
 export type DeleteRoomInput = z.infer<typeof deleteRoomSchema>;
+export type GetMessagesForRoomInput = z.input<typeof getMessagesForRoomSchema>;
 export type SendMessageInput = z.infer<typeof sendMessageSchema>;
 export type UpdateMessageInput = z.infer<typeof updateMessageSchema>;
 export type MessageIdInput = z.infer<typeof messageIdSchema>;

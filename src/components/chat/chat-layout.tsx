@@ -14,6 +14,7 @@ import { ChatRoom } from "@/components/chat/chat-room";
 import { RoomSidebar } from "@/components/chat/room-sidebar";
 import type {
   ChatMessage,
+  ChatMessagePageInfo,
   ChatRoom as ChatRoomType,
   ChatRoomMember,
   CurrentChatUser,
@@ -23,6 +24,7 @@ type ChatLayoutProps = {
   rooms: ChatRoomType[];
   activeRoomId: string | null;
   messages: ChatMessage[];
+  messagePageInfo: ChatMessagePageInfo;
   members: ChatRoomMember[];
   currentUser: CurrentChatUser;
 };
@@ -73,6 +75,7 @@ export function ChatLayout({
   rooms,
   activeRoomId,
   messages,
+  messagePageInfo,
   currentUser,
 }: ChatLayoutProps) {
   const router = useRouter();
@@ -171,6 +174,7 @@ export function ChatLayout({
             key={activeRoom.id}
             room={activeRoom}
             messages={messages}
+            messagePageInfo={messagePageInfo}
             currentUser={currentUser}
             canSendMessages={activeRoom.isMember}
             onOpenRooms={openMobileRooms}

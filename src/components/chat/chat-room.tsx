@@ -8,8 +8,10 @@ import { ChatHeader } from "@/components/chat/chat-header";
 import { MessageComposer } from "@/components/chat/message-composer";
 import { MessageList } from "@/components/chat/message-list";
 import { useRoomRealtime } from "@/hooks/use-room-realtime";
+import { getMessagesForRoom } from "@/server/actions/messages";
 import type {
   ChatMessage,
+  ChatMessagePageInfo,
   ChatMessageReplyPreview,
   ChatRoom as ChatRoomType,
   CurrentChatUser,
@@ -18,20 +20,39 @@ import type {
 type ChatRoomProps = {
   room: ChatRoomType;
   messages: ChatMessage[];
+  messagePageInfo: ChatMessagePageInfo;
   currentUser: CurrentChatUser;
   canSendMessages: boolean;
   onOpenRooms: () => void;
   onRoomDeleted: (roomId: string) => void;
 };
 
+function sortMessagesChronologically(messages: ChatMessage[]) {
+  return [...messages].sort((a, b) => {
+    const createdAtDiff = Date.parse(a.createdAt) - Date.parse(b.createdAt);
+
+    if (createdAtDiff !== 0) {
+      return createdAtDiff;
+    }
+
+    return a.id.localeCompare(b.id);
+  });
+}
+
 export function ChatRoom({
   room,
   messages: initialMessages,
+  messagePageInfo: initialMessagePageInfo,
   currentUser,
   canSendMessages,
   onOpenRooms,
   onRoomDeleted,
 }: ChatRoomProps) {
+  const [pagedMessages, setPagedMessages] = useState(initialMessages);
+  const [messagePageInfo, setMessagePageInfo] = useState(
+    initialMessagePageInfo,
+  );
+  const [isLoadingOlderMessages, setIsLoadingOlderMessages] = useState(false);
   const [replyToMessage, setReplyToMessage] =
     useState<ChatMessageReplyPreview | null>(null);
 
@@ -48,6 +69,42 @@ export function ChatRoom({
     });
   }, []);
 
+  const loadOlderMessages = useCallback(async () => {
+    if (
+      isLoadingOlderMessages ||
+      !messagePageInfo.hasMore ||
+      !messagePageInfo.nextCursor
+    ) {
+      return;
+    }
+
+    setIsLoadingOlderMessages(true);
+
+    try {
+      const result = await getMessagesForRoom({
+        roomId: room.id,
+        cursor: messagePageInfo.nextCursor,
+      });
+
+      if (!result.ok) {
+        return;
+      }
+
+      setPagedMessages((currentMessages) => {
+        const messageById = new Map<string, ChatMessage>();
+
+        for (const message of [...result.data.messages, ...currentMessages]) {
+          messageById.set(message.id, message);
+        }
+
+        return sortMessagesChronologically(Array.from(messageById.values()));
+      });
+      setMessagePageInfo(result.data.pageInfo);
+    } finally {
+      setIsLoadingOlderMessages(false);
+    }
+  }, [isLoadingOlderMessages, messagePageInfo, room.id]);
+
   const {
     messages,
     status: realtimeStatus,
@@ -61,7 +118,7 @@ export function ChatRoom({
     removeMessage,
   } = useRoomRealtime({
     roomId: room.id,
-    initialMessages,
+    initialMessages: pagedMessages,
     currentUser,
     enabled: canSendMessages,
   });
@@ -81,6 +138,9 @@ export function ChatRoom({
         currentUserId={currentUser.id}
         roomName={room.name}
         typingUsers={typingUsers}
+        hasOlderMessages={messagePageInfo.hasMore}
+        isLoadingOlderMessages={isLoadingOlderMessages}
+        onLoadOlderMessages={loadOlderMessages}
         onReply={handleReply}
         onMessageUpdated={applyMessageUpdate}
         onReactionToggle={toggleMessageReactionOptimistically}

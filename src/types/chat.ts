@@ -77,6 +77,16 @@ export type ChatMessage = {
   sendStatus?: "sending" | "failed";
 };
 
+export type ChatMessageCursor = {
+  id: string;
+  createdAt: string;
+};
+
+export type ChatMessagePageInfo = {
+  hasMore: boolean;
+  nextCursor: ChatMessageCursor | null;
+};
+
 export type RealtimeConnectionStatus =
   | "connected"
   | "loading"

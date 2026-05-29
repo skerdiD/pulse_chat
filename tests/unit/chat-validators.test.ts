@@ -3,6 +3,7 @@ import {
   addRoomMemberSchema,
   createRoomSchema,
   deleteRoomSchema,
+  getMessagesForRoomSchema,
   messageIdSchema,
   removeRoomMemberSchema,
   roomIdSchema,
@@ -205,6 +206,55 @@ describe("chat validators", () => {
       expect(result.success).toBe(false);
     });
 
+  });
+
+  describe("getMessagesForRoomSchema", () => {
+    it("defaults message pagination limit", () => {
+      const result = getMessagesForRoomSchema.safeParse({
+        roomId: validRoomId
+      });
+
+      expect(result.success).toBe(true);
+
+      if (result.success) {
+        expect(result.data.limit).toBe(30);
+        expect(result.data.cursor).toBeUndefined();
+      }
+    });
+
+    it("accepts a valid message cursor", () => {
+      const result = getMessagesForRoomSchema.safeParse({
+        roomId: validRoomId,
+        limit: 20,
+        cursor: {
+          id: validMessageId,
+          createdAt: "2026-05-29T12:00:00.000Z"
+        }
+      });
+
+      expect(result.success).toBe(true);
+    });
+
+    it("rejects invalid pagination limits", () => {
+      const result = getMessagesForRoomSchema.safeParse({
+        roomId: validRoomId,
+        limit: 61
+      });
+
+      expect(result.success).toBe(false);
+    });
+
+    it("rejects invalid message cursors", () => {
+      const result = getMessagesForRoomSchema.safeParse({
+        roomId: validRoomId,
+        cursor: {
+          id: "bad-id",
+          createdAt: "not-a-date"
+        }
+      });
+
+      expect(result.success).toBe(false);
+    });
   });
 
   describe("updateMessageSchema", () => {
