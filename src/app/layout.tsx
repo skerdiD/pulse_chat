@@ -7,6 +7,9 @@ export const metadata: Metadata = {
   title: "Pulse Chat",
   description:
     "Pulse Chat is a premium real-time room-based chat app for teams, creators, and small communities.",
+  icons: {
+    icon: "/icon.svg",
+  },
 };
 
 export default function RootLayout({

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="shell" x1="9" y1="8" x2="55" y2="56">
+      <stop offset="0" stop-color="#8b5cf6"/>
+      <stop offset="0.58" stop-color="#6d28d9"/>
+      <stop offset="1" stop-color="#111827"/>
+    </linearGradient>
+    <linearGradient id="pulse" x1="17" y1="32" x2="48" y2="32">
+      <stop offset="0" stop-color="#a7f3d0"/>
+      <stop offset="1" stop-color="#34d399"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="20" fill="url(#shell)"/>
+  <path d="M19.2 19.8h25.6c5.04 0 9.12 3.8 9.12 8.51v8.03c0 4.7-4.08 8.51-9.12 8.51H33.97l-8.22 6.53c-1.17.93-2.88.1-2.88-1.39v-5.14H19.2c-5.04 0-9.12-3.8-9.12-8.51v-8.03c0-4.7 4.08-8.51 9.12-8.51Z" fill="#0f172a" fill-opacity="0.84" stroke="rgba(255,255,255,0.28)" stroke-width="2.2"/>
+  <path d="M17.6 33.6h6.59l3.28-7.65 5.36 14.88 3.58-8.43h9.99" fill="none" stroke="url(#pulse)" stroke-width="3.75" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="49.6" cy="17.6" r="5.2" fill="#34d399" stroke="#020617" stroke-width="2.6"/>
+</svg>
