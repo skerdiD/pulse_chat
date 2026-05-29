@@ -2,13 +2,13 @@
 
 **Pulse Chat** is a production-style realtime team messaging app built with **Next.js 16**, **React 19**, **TypeScript**, **Supabase Auth**, **Supabase Realtime**, **Supabase Postgres**, **Drizzle ORM**, and a polished dark SaaS interface.
 It demonstrates authentication, public and private rooms, role-based permissions, private room member management, realtime messaging, replies, emoji reactions, typing indicators, unread counts, message pagination, protected server actions, validation, testing, observability, and production-minded UI/UX.
-[Live Demo](https://pulse-chat-seven.vercel.app/) | [Repository](https://github.com/skerdiD/pulse_chat) | [Features](#key-features) | [Tech Stack](#tech-stack) | [Getting Started](#getting-started)
+[Live Demo](https://pulse-chat-skerdid.vercel.app/) | [Repository](https://github.com/skerdiD/pulse_chat) | [Features](#key-features) | [Tech Stack](#tech-stack) | [Getting Started](#getting-started)
 
 ---
 
 ## Preview
 
-Explore the deployed app: [pulse-chat-seven.vercel.app](https://pulse-chat-seven.vercel.app/)
+Explore the deployed app: [pulse-chat-skerdid.vercel.app](https://pulse-chat-skerdid.vercel.app/)
 
 ### Landing Page
 
