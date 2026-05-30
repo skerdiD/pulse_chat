@@ -1,4 +1,7 @@
-import "dotenv/config";
+import { config } from "dotenv";
+
+config({ path: ".env.local" });
+config();
 
 import { createClient } from "@supabase/supabase-js";
 import { eq } from "drizzle-orm";
