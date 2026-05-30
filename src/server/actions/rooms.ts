@@ -9,6 +9,7 @@ import { messages, profiles, roomMembers, rooms } from "@/db/schema";
 import { createRoomAj, joinRoomAj, roomUpdateAj } from "@/lib/arcjet";
 import { getSafeAvatarUrl } from "@/lib/avatar";
 import { formatRoomPreviewTime } from "@/lib/format";
+import { isDemoUser } from "@/server/demo-user";
 import {
   actionError,
   actionSuccess,
@@ -130,6 +131,13 @@ function canManageMembers(role: ChatRoomMember["role"]) {
 function revalidateRoomMemberPaths(roomId: string) {
   revalidatePath("/chat");
   revalidatePath(`/chat/rooms/${roomId}/settings`);
+}
+
+function getDemoMutationError() {
+  return actionError(
+    "FORBIDDEN",
+    "The demo account can explore chat, but cannot change rooms or members.",
+  );
 }
 
 export async function getRoomsForCurrentUser(): Promise<
@@ -485,6 +493,10 @@ export async function addRoomMemberAction(
     addRoomMemberSchema,
     input,
     async ({ input, user }) => {
+      if (isDemoUser(user)) {
+        return getDemoMutationError();
+      }
+
       const actorMembership = await getActiveRoomMembership(
         input.roomId,
         user.id,
@@ -710,13 +722,18 @@ export async function removeRoomMemberAction(
   return withAuthedValidatedInput(
     removeRoomMemberSchema,
     input,
-    async ({ input, user }) =>
-      removeRoomMember({
+    async ({ input, user }) => {
+      if (isDemoUser(user)) {
+        return getDemoMutationError();
+      }
+
+      return removeRoomMember({
         roomId: input.roomId,
         targetUserId: input.userId,
         actorUserId: user.id,
         successMessage: "Member removed.",
-      }),
+      });
+    },
   );
 }
 
@@ -728,13 +745,18 @@ export async function leaveRoomAction(
   return withAuthedValidatedInput(
     roomIdSchema,
     actionInput,
-    async ({ input, user }) =>
-      removeRoomMember({
+    async ({ input, user }) => {
+      if (isDemoUser(user)) {
+        return getDemoMutationError();
+      }
+
+      return removeRoomMember({
         roomId: input.roomId,
         targetUserId: user.id,
         actorUserId: user.id,
         successMessage: "Left room.",
-      }),
+      });
+    },
   );
 }
 
@@ -749,6 +771,10 @@ export async function createRoomAction(
     createRoomSchema,
     input,
     async ({ input, user }) => {
+      if (isDemoUser(user)) {
+        return getDemoMutationError();
+      }
+
       const arcjetDecision = await protectCreateRoomAction(user.id);
 
       if (!arcjetDecision.ok) {
@@ -886,6 +912,10 @@ export async function updateRoomAction(
     updateRoomSchema,
     input,
     async ({ input, user }) => {
+      if (isDemoUser(user)) {
+        return getDemoMutationError();
+      }
+
       const arcjetDecision = await protectRoomUpdateAction(user.id);
 
       if (!arcjetDecision.ok) {
@@ -968,6 +998,10 @@ export async function deleteRoomAction(
     deleteRoomSchema,
     input,
     async ({ input, user }) => {
+      if (isDemoUser(user)) {
+        return getDemoMutationError();
+      }
+
       const [room] = await db
         .select({
           id: rooms.id,

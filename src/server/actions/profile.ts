@@ -11,6 +11,7 @@ import { profileUpdateAj } from "@/lib/arcjet";
 import { getSafeAvatarUrl } from "@/lib/avatar";
 import { createClient } from "@/lib/supabase/server";
 import { protectWithArcjet } from "@/server/actions/arcjet-protection";
+import { isDemoUser } from "@/server/demo-user";
 import {
   actionError,
   actionSuccess,
@@ -90,6 +91,13 @@ export async function updateProfileAction(
     updateProfileSchema,
     input,
     async ({ input, user }) => {
+      if (isDemoUser(user)) {
+        return actionError(
+          "FORBIDDEN",
+          "The demo account can explore chat, but cannot update its profile.",
+        );
+      }
+
       const arcjetDecision = await protectProfileUpdateAction(user.id);
 
       if (!arcjetDecision.ok) {

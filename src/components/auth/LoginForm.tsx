@@ -3,13 +3,16 @@
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { useForm } from "react-hook-form";
-import { Loader2, LockKeyhole, Mail } from "lucide-react";
+import { KeyRound, Loader2, LockKeyhole, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { z } from "zod";
 
 import { loginAction } from "@/server/actions/auth";
 import { loginSchema, type LoginInput } from "@/server/validators/auth";
+
+const DEMO_EMAIL = "demo@pulsechat.app";
+const DEMO_PASSWORD = "Demo123456!";
 
 export function LoginForm() {
   const router = useRouter();
@@ -45,8 +48,56 @@ export function LoginForm() {
     });
   }
 
+  function fillDemoCredentials() {
+    form.clearErrors();
+    form.setValue("email", DEMO_EMAIL, {
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: true,
+    });
+    form.setValue("password", DEMO_PASSWORD, {
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: true,
+    });
+  }
+
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+      <div className="rounded-2xl border border-purple-400/20 bg-purple-500/10 p-4 text-sm shadow-inner shadow-purple-950/20">
+        <div className="flex items-start gap-3">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-purple-300/20 bg-slate-950/70 text-purple-200">
+            <KeyRound className="size-4" />
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <p className="font-black text-purple-100">Demo Account</p>
+            <dl className="mt-2 space-y-1 text-xs font-semibold text-slate-300">
+              <div className="flex min-w-0 gap-2">
+                <dt className="text-slate-500">Email</dt>
+                <dd className="truncate text-slate-100">{DEMO_EMAIL}</dd>
+              </div>
+              <div className="flex min-w-0 gap-2">
+                <dt className="text-slate-500">Password</dt>
+                <dd className="truncate text-slate-100">{DEMO_PASSWORD}</dd>
+              </div>
+            </dl>
+            <p className="mt-2 text-xs leading-5 text-slate-400">
+              Public sample access for exploring the app experience.
+            </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={fillDemoCredentials}
+          disabled={isPending}
+          className="mt-4 inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-purple-300/20 bg-slate-950/70 px-4 text-xs font-black text-purple-100 transition hover:border-purple-300/40 hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          Fill demo credentials
+        </button>
+      </div>
+
       <div className="space-y-2">
         <label
           htmlFor="email"

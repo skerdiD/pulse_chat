@@ -121,6 +121,8 @@ import {
 } from "@/server/actions/messages";
 import {
   addRoomMemberAction,
+  createRoomAction,
+  deleteRoomAction,
   getRoomsForCurrentUser,
   joinRoomAction,
   leaveRoomAction,
@@ -136,12 +138,13 @@ const publicRoomId = "44444444-4444-4444-8444-444444444444";
 const messageId = "55555555-5555-4555-8555-555555555555";
 const membershipId = "66666666-6666-4666-8666-666666666666";
 
-function createUser(id = currentUserId): User {
+function createUser(id = currentUserId, email = "user@example.com"): User {
   return {
     id,
     app_metadata: {},
     aud: "authenticated",
     created_at: new Date(0).toISOString(),
+    email,
     user_metadata: {},
   };
 }
@@ -508,6 +511,84 @@ describe("chat action authorization", () => {
     }
 
     expect(mocks.update).not.toHaveBeenCalled();
+  });
+
+  it("prevents the public demo account from creating rooms", async () => {
+    mocks.requireUser.mockResolvedValue(createUser(currentUserId, "demo@pulsechat.app"));
+
+    const result = await createRoomAction({
+      name: "Demo Room",
+      description: undefined,
+      visibility: "public",
+    });
+
+    expect(result.ok).toBe(false);
+
+    if (!result.ok) {
+      expect(result.error.code).toBe("FORBIDDEN");
+    }
+
+    expect(mocks.insert).not.toHaveBeenCalled();
+    expect(mocks.protectWithArcjet).not.toHaveBeenCalled();
+  });
+
+  it("prevents the public demo account from changing room settings", async () => {
+    mocks.requireUser.mockResolvedValue(createUser(currentUserId, "demo@pulsechat.app"));
+
+    const result = await updateRoomAction({
+      roomId: privateRoomId,
+      name: "Updated",
+      description: undefined,
+      visibility: "public",
+    });
+
+    expect(result.ok).toBe(false);
+
+    if (!result.ok) {
+      expect(result.error.code).toBe("FORBIDDEN");
+    }
+
+    expect(mocks.update).not.toHaveBeenCalled();
+    expect(mocks.protectWithArcjet).not.toHaveBeenCalled();
+  });
+
+  it("prevents the public demo account from deleting rooms", async () => {
+    mocks.requireUser.mockResolvedValue(createUser(currentUserId, "demo@pulsechat.app"));
+
+    const result = await deleteRoomAction({
+      roomId: privateRoomId,
+    });
+
+    expect(result.ok).toBe(false);
+
+    if (!result.ok) {
+      expect(result.error.code).toBe("FORBIDDEN");
+    }
+
+    expect(mocks.update).not.toHaveBeenCalled();
+    expect(mocks.select).not.toHaveBeenCalled();
+  });
+
+  it("prevents the public demo account from changing room members", async () => {
+    mocks.requireUser.mockResolvedValue(createUser(currentUserId, "demo@pulsechat.app"));
+
+    const addResult = await addRoomMemberAction({
+      roomId: privateRoomId,
+      userId: otherUserId,
+    });
+
+    const removeResult = await removeRoomMemberAction({
+      roomId: privateRoomId,
+      userId: otherUserId,
+    });
+
+    const leaveResult = await leaveRoomAction(privateRoomId);
+
+    expect(addResult.ok).toBe(false);
+    expect(removeResult.ok).toBe(false);
+    expect(leaveResult.ok).toBe(false);
+    expect(mocks.insert).not.toHaveBeenCalled();
+    expect(mocks.delete).not.toHaveBeenCalled();
   });
 
   it("allows joining public rooms and blocks joining private rooms", async () => {
